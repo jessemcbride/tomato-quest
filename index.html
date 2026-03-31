@@ -635,14 +635,19 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
 /* ══════════════════════════════════════════
    GAME DATA CONSTANTS  (must be first)
 ══════════════════════════════════════════ */
+const BASE_BOSS_DAMAGE=250;
 const BOSSES=[
-  {n:'DISTRACTION DRAGON',e:'🐉',hp:5000},
-  {n:'PROCRASTINATION LICH',e:'💀',hp:6500},
-  {n:'DOOM SCROLLING HYDRA',e:'🐍',hp:4500},
-  {n:'MEETING MONSTER',e:'👾',hp:7200},
-  {n:'NOTIFICATION WRAITH',e:'👻',hp:5500},
-  {n:'BURNOUT BASILISK',e:'🦎',hp:8000},
+  {n:'DISTRACTION DRAGON',e:'🐉',poms:4},
+  {n:'PROCRASTINATION LICH',e:'💀',poms:5},
+  {n:'DOOM SCROLLING HYDRA',e:'🐍',poms:6},
+  {n:'MEETING MONSTER',e:'👾',poms:7},
+  {n:'NOTIFICATION WRAITH',e:'👻',poms:8},
+  {n:'BURNOUT BASILISK',e:'🦎',poms:9},
 ];
+function bossMaxHp(idx){
+  const b=BOSSES[idx]||BOSSES[0];
+  return b.poms*BASE_BOSS_DAMAGE;
+}
 const QUESTS=[
   'Slay the Distraction Dragon with 4 focus sessions',
   "The Scholar's Trial — earn 300 XP today",
@@ -800,7 +805,7 @@ function defs(){return{
   level:1,xp:0,xpMax:200,hp:100,hpMax:100,mp:50,mpMax:80,
   gold:0,totalGoldEarned:0,goldSpent:0,
   totalPoms:0,todayPoms:0,totalMins:0,
-  bossesSlain:0,bossHp:5000,bossHpMax:5000,bossIdx:0,
+  bossesSlain:0,bossHp:bossMaxHp(0),bossHpMax:bossMaxHp(0),bossIdx:0,lastBossHit:0,
   streak:0,bestStreak:0,lastDate:'',startDay:new Date().toDateString(),
   pomPhase:0,history:[],musicOn:false,notifGranted:false,
   mapSeed:0,mapStep:0,mapDate:'',mapClaimed:[],roadsCompleted:0,
@@ -810,6 +815,16 @@ function defs(){return{
 function load(){try{const r=localStorage.getItem(LK);return r?{...defs(),...JSON.parse(r)}:defs()}catch(e){return defs()}}
 function save(p){Object.assign(G,p);try{localStorage.setItem(LK,JSON.stringify(G))}catch(e){}}
 let G=load();
+
+function normalizeBossProgress(){
+  const idx=Math.max(0,Math.min(BOSSES.length-1,Number.isFinite(G.bossIdx)?G.bossIdx:0));
+  const expectedMax=bossMaxHp(idx);
+  const prevMax=Number.isFinite(G.bossHpMax)&&G.bossHpMax>0?G.bossHpMax:expectedMax;
+  const prevHp=Number.isFinite(G.bossHp)?G.bossHp:expectedMax;
+  const ratio=Math.max(0,Math.min(1,prevHp/prevMax));
+  save({bossIdx:idx,bossHpMax:expectedMax,bossHp:Math.round(expectedMax*ratio)});
+}
+normalizeBossProgress();
 
 (function(){
   const today=new Date().toDateString();
@@ -1387,18 +1402,19 @@ function closeLU(){document.getElementById('luOv').classList.remove('show')}
 ══════════════════════════════════════════ */
 function hitBoss(){
   const cls=gCls();
-  let d=Math.floor((180+Math.floor(Math.random()*280))*cls.bossMult);
+  let d=Math.round(BASE_BOSS_DAMAGE*cls.bossMult);
   if(hasBuff('dmg3x')){d*=3;consumeBuff('dmg3x');showBanner('🔥 Triple damage!','')}
   sfx('hit');
   const hp=Math.max(0,G.bossHp-d);
-  document.getElementById('rdmg').innerHTML='Last hit: <span>'+d+' dmg</span>';
+  save({lastBossHit:d});
   document.getElementById('bossP').classList.add('boss-hit');
   setTimeout(()=>document.getElementById('bossP').classList.remove('boss-hit'),420);
   if(hp<=0){
-    const ni=(G.bossIdx+1)%BOSSES.length,nb=BOSSES[ni];
-    save({bossesSlain:G.bossesSlain+1,bossIdx:ni,bossHp:nb.hp,bossHpMax:nb.hp});
+    const defeated=BOSSES[G.bossIdx];
+    const ni=(G.bossIdx+1)%BOSSES.length;
+    save({bossesSlain:G.bossesSlain+1,bossIdx:ni,bossHp:bossMaxHp(ni),bossHpMax:bossMaxHp(ni)});
     gainXP(150);showPop('🏆 BOSS SLAIN! +150 XP');
-    sendNotif('🏆 Boss Defeated!',`You slew the ${BOSSES[G.bossIdx].n}! A new challenger approaches.`);
+    sendNotif('🏆 Boss Defeated!',`You slew the ${defeated.n}! A new challenger approaches.`);
   }else save({bossHp:hp});
   updateBossUI();
 }
@@ -1409,6 +1425,7 @@ function updateBossUI(){
   document.getElementById('bHpV').textContent=G.bossHp.toLocaleString();
   document.getElementById('bHpM').textContent=G.bossHpMax.toLocaleString();
   document.getElementById('bHpB').style.width=(G.bossHp/G.bossHpMax*100)+'%';
+  document.getElementById('rdmg').innerHTML='Last hit: <span>'+(G.lastBossHit||0)+' dmg</span> • Target: '+b.poms+' focus sessions';
 }
 
 /* ══════════════════════════════════════════
