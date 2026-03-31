@@ -1,0 +1,1382 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TomatoQuest</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+:root{
+  --bg:#0d0d1a;--panel:#12122a;--panel2:#1a1a38;
+  --border:#3a3a7c;--border2:#5a5aac;
+  --tomato:#e8433a;--tomato2:#ff6b5b;
+  --gold:#f5c842;--gold2:#ffe580;
+  --green:#4ade80;--blue:#60a5fa;--purple:#a78bfa;
+  --text:#e8e8ff;--text2:#9898cc;
+  --xp:#f59e0b;--hp:#ef4444;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:'VT323',monospace;font-size:18px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px)}
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1px 1px at 8% 12%,rgba(255,255,255,.7) 0%,transparent 100%),
+    radial-gradient(1px 1px at 22% 58%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 38% 28%,rgba(255,255,255,.8) 0%,transparent 100%),
+    radial-gradient(1px 1px at 53% 78%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 68% 18%,rgba(255,255,255,.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 83% 63%,rgba(255,255,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 14% 83%,rgba(255,255,255,.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 76% 86%,rgba(255,255,255,.7) 0%,transparent 100%)}
+
+/* ── CREATION ── */
+#creationScreen{position:fixed;inset:0;z-index:5000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+#creationScreen.hidden{display:none}
+.cw{width:100%;max-width:700px;display:flex;flex-direction:column;align-items:center}
+.c-logo{font-family:'Press Start 2P',monospace;font-size:1.4rem;color:var(--tomato2);text-shadow:4px 4px 0 #7a1010,0 0 40px rgba(255,107,91,.6);margin-bottom:8px;animation:logo-in 1s ease-out both}
+.c-logo span{color:var(--gold)}
+.c-sub{font-family:'Press Start 2P',monospace;font-size:.38rem;color:var(--text2);letter-spacing:2px;animation:logo-in 1s .4s ease-out both;margin-bottom:28px}
+@keyframes logo-in{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes hero-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.step-lbl{font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--text2);margin-bottom:14px;text-align:center;animation:fade-in .5s ease-out both}
+.pdots{display:flex;gap:8px;margin-bottom:22px}
+.pdot{width:10px;height:10px;background:var(--border);transition:background .3s}
+.pdot.active{background:var(--tomato2)}.pdot.done{background:var(--green)}
+/* name step */
+.s0{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.name-field{width:100%;background:#0a0a1a;border:3px solid var(--border);color:var(--text);font-family:'Press Start 2P',monospace;font-size:.62rem;padding:12px 16px;outline:none;text-align:center;letter-spacing:2px;transition:border-color .2s}
+.name-field:focus{border-color:var(--tomato)}
+.name-field::placeholder{color:#33334a;font-size:.46rem}
+.name-hint{font-size:.82rem;color:var(--text2);text-align:center}
+/* class step */
+.s1{width:100%;animation:fade-in .4s ease-out both}
+.class-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cc{border:3px solid var(--border);background:var(--panel);padding:14px 10px;cursor:pointer;transition:border-color .15s,background .15s,transform .1s;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;overflow:hidden}
+.cc::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;pointer-events:none}
+.cc.knight::before{background:radial-gradient(ellipse at 50% 100%,rgba(239,68,68,.15),transparent 70%)}
+.cc.mage::before{background:radial-gradient(ellipse at 50% 100%,rgba(167,139,250,.15),transparent 70%)}
+.cc.ranger::before{background:radial-gradient(ellipse at 50% 100%,rgba(74,222,128,.15),transparent 70%)}
+.cc.paladin::before{background:radial-gradient(ellipse at 50% 100%,rgba(245,200,66,.15),transparent 70%)}
+.cc:hover{transform:translateY(-2px)}.cc:hover::before,.cc.sel::before{opacity:1}
+.cc.knight:hover,.cc.knight.sel{border-color:var(--hp)}
+.cc.mage:hover,.cc.mage.sel{border-color:var(--purple)}
+.cc.ranger:hover,.cc.ranger.sel{border-color:var(--green)}
+.cc.paladin:hover,.cc.paladin.sel{border-color:var(--gold)}
+.cc-sprite{font-size:1.6rem;line-height:1}
+.cc-name{font-family:'Press Start 2P',monospace;font-size:.4rem}
+.cc.knight .cc-name{color:var(--hp)}.cc.mage .cc-name{color:var(--purple)}
+.cc.ranger .cc-name{color:var(--green)}.cc.paladin .cc-name{color:var(--gold)}
+.cc-tag{font-family:'Press Start 2P',monospace;font-size:.28rem;padding:2px 5px;border:1px solid}
+.cc.knight .cc-tag{color:var(--hp);border-color:var(--hp)}.cc.mage .cc-tag{color:var(--purple);border-color:var(--purple)}
+.cc.ranger .cc-tag{color:var(--green);border-color:var(--green)}.cc.paladin .cc-tag{color:var(--gold);border-color:var(--gold)}
+.cc-desc{font-size:.78rem;color:var(--text2);text-align:center;line-height:1.3}
+.cc-bonus{font-family:'Press Start 2P',monospace;font-size:.26rem;text-align:center;margin-top:2px}
+.cc.knight .cc-bonus{color:var(--hp)}.cc.mage .cc-bonus{color:var(--purple)}
+.cc.ranger .cc-bonus{color:var(--green)}.cc.paladin .cc-bonus{color:var(--gold)}
+.sel-check{position:absolute;top:7px;right:8px;font-size:.85rem;opacity:0;transition:opacity .2s;pointer-events:none}
+.cc.sel .sel-check{opacity:1}
+/* customise step */
+.s2{width:100%;animation:fade-in .4s ease-out both}
+.cust-wrap{width:100%;max-width:560px;display:flex;gap:16px;align-items:flex-start;margin:0 auto}
+.cust-preview{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0}
+.cust-preview-lbl{font-family:'Press Start 2P',monospace;font-size:.3rem;color:var(--text2)}
+.cust-preview-spr{width:96px;height:96px;animation:hero-float 3s ease-in-out infinite}
+.cust-opts{flex:1;display:flex;flex-direction:column;gap:14px}
+.cust-sec{display:flex;flex-direction:column;gap:7px}
+.cust-sec-lbl{font-family:'Press Start 2P',monospace;font-size:.32rem;color:var(--text2)}
+.cust-row{display:flex;gap:7px;flex-wrap:wrap}
+.cust-color{width:26px;height:26px;border:3px solid transparent;cursor:pointer;border-radius:50%;transition:border-color .15s,transform .1s;flex-shrink:0}
+.cust-color:hover{transform:scale(1.2)}.cust-color.sel{border-color:var(--gold)!important;transform:scale(1.15)}
+.cust-eye{font-family:'Press Start 2P',monospace;font-size:.26rem;padding:5px 8px;border:2px solid var(--border);background:var(--panel);cursor:pointer;color:var(--text2);transition:border-color .15s,color .15s;min-width:48px;text-align:center}
+.cust-eye:hover{border-color:var(--border2);color:var(--text)}.cust-eye.sel{border-color:var(--gold);color:var(--gold)}
+/* confirm step */
+.s3{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.conf-card{border:3px solid var(--border2);background:var(--panel);padding:20px 28px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.conf-sprite{font-size:3rem;animation:hero-float 3s ease-in-out infinite;width:72px;height:72px}
+.conf-name{font-family:'Press Start 2P',monospace;font-size:.6rem;color:var(--gold)}
+.conf-class{font-size:.9rem}
+.conf-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font-size:.8rem;margin-top:4px;width:100%}
+.conf-stats .csl{color:var(--text2);text-align:right}
+/* nav */
+.cnav{display:flex;gap:10px;margin-top:16px;justify-content:center}
+/* ── BUTTONS ── */
+.btn{font-family:'Press Start 2P',monospace;font-size:.42rem;cursor:pointer;border:none;padding:9px 15px;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(2px)}.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-p{background:var(--tomato);color:white;box-shadow:0 4px 0 #7a1010}
+.btn-p:hover:not(:disabled){background:var(--tomato2)}.btn-p:active{box-shadow:0 2px 0 #7a1010}
+.btn-s{background:var(--panel2);color:var(--text2);border:2px solid var(--border);box-shadow:0 4px 0 #090912}
+.btn-s:hover:not(:disabled){color:var(--text);border-color:var(--border2)}.btn-s:active{box-shadow:0 2px 0 #090912}
+.btn-g{background:var(--gold);color:#1a1000;box-shadow:0 4px 0 #7a5a00}
+.btn-g:hover:not(:disabled){background:var(--gold2)}.btn-g:active{box-shadow:0 2px 0 #7a5a00;transform:translateY(2px)}
+.btn-blue{background:var(--blue);color:#001a3a;box-shadow:0 4px 0 #1a4a7a}
+.btn-blue:hover:not(:disabled){background:#93c5fd}.btn-blue:active{box-shadow:0 2px 0 #1a4a7a}
+/* ── MAIN APP ── */
+.app{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:14px;display:flex;flex-direction:column;gap:11px;min-height:100vh}
+.app.hidden{display:none}
+header{display:flex;align-items:center;justify-content:space-between;border:3px solid var(--tomato);background:var(--panel);padding:9px 15px;box-shadow:0 0 24px rgba(232,67,58,.35),inset 0 1px 0 rgba(255,255,255,.05)}
+.logo{font-family:'Press Start 2P',monospace;font-size:.88rem;color:var(--tomato2);text-shadow:3px 3px 0 #7a1010,0 0 20px rgba(255,107,91,.5)}
+.logo span{color:var(--gold)}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.day-badge{font-family:'Press Start 2P',monospace;font-size:.38rem;color:var(--gold);border:2px solid var(--gold);padding:4px 8px;animation:pulse-border 2s infinite}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 0 rgba(245,200,66,0)}50%{box-shadow:0 0 10px rgba(245,200,66,.5)}}
+.hbtn{font-family:'Press Start 2P',monospace;font-size:.3rem;background:var(--panel2);border:2px solid var(--border);color:var(--text2);padding:5px 8px;cursor:pointer;transition:border-color .15s,color .15s;position:relative}
+.hbtn:hover{border-color:var(--border2);color:var(--text)}.hbtn.on{border-color:var(--green);color:var(--green)}
+.hbtn .badge{position:absolute;top:-6px;right:-6px;background:var(--tomato);color:white;font-size:.25rem;padding:1px 4px;border-radius:0;min-width:14px;text-align:center}
+/* hero panel */
+.hero-panel{display:grid;grid-template-columns:206px 1fr;gap:11px}
+.char-card{border:3px solid var(--purple);background:var(--panel);padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 0 20px rgba(167,139,250,.2)}
+.hero-spr{width:80px;height:80px;animation:hero-float 3s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
+.char-nm{font-family:'Press Start 2P',monospace;font-size:.38rem;color:var(--gold);text-align:center;word-break:break-all}
+.char-cl{font-size:.78rem}.char-lv{font-family:'Press Start 2P',monospace;font-size:.44rem;color:var(--text2)}
+.char-lv span{color:var(--green)}
+.sr{width:100%}.sl{display:flex;justify-content:space-between;font-size:.76rem;margin-bottom:2px}
+.bt{width:100%;height:10px;background:#0a0a1a;border:2px solid #2a2a4a;overflow:hidden}
+.bf{height:100%;transition:width .6s steps(10,end)}
+.bf-hp{background:var(--hp);box-shadow:0 0 6px var(--hp)}
+.bf-xp{background:var(--xp);box-shadow:0 0 6px var(--xp)}
+.bf-mp{background:var(--blue);box-shadow:0 0 6px var(--blue)}
+.cls-bonus{font-family:'Press Start 2P',monospace;font-size:.26rem;text-align:center;margin-top:2px}
+/* tabs */
+.main-area{display:flex;flex-direction:column;gap:0}
+.tab-bar{display:flex;border:2px solid var(--border);overflow:hidden}
+.tbtn{flex:1;font-family:'Press Start 2P',monospace;font-size:.32rem;padding:8px 2px;background:var(--panel2);border:none;border-right:2px solid var(--border);color:var(--text2);cursor:pointer;transition:background .1s}
+.tbtn:last-child{border-right:none}
+.tbtn.act{background:var(--panel);color:var(--text)}
+.tbtn.act.tq{color:var(--gold)}.tbtn.act.tm{color:var(--green)}
+.tbtn.act.tsh{color:var(--blue)}.tbtn.act.tac{color:var(--purple)}
+.tc{display:none;flex-direction:column;gap:11px;border:2px solid var(--border);border-top:none;padding:12px;background:var(--panel)}
+.tc.act{display:flex}
+/* quest tab */
+.qb{border:3px solid var(--gold);background:linear-gradient(135deg,#1a1408,var(--panel));padding:8px 13px;display:flex;align-items:center;gap:9px;box-shadow:0 0 14px rgba(245,200,66,.12)}
+.qi{font-size:1.3rem}.qinfo{flex:1}
+.qt{font-family:'Press Start 2P',monospace;font-size:.38rem;color:var(--gold2);margin-bottom:2px}
+.qdesc{color:var(--text2);font-size:.8rem}.qr{font-family:'Press Start 2P',monospace;font-size:.36rem;color:var(--green);text-align:right;white-space:nowrap}
+.timer-box{border:3px solid var(--tomato);background:var(--panel2);padding:15px;display:flex;flex-direction:column;align-items:center;gap:11px;box-shadow:0 0 28px rgba(232,67,58,.18)}
+.mtabs{display:flex;width:100%;border:2px solid var(--border);overflow:hidden}
+.mtab{flex:1;padding:6px 2px;text-align:center;font-family:'Press Start 2P',monospace;font-size:.29rem;cursor:pointer;background:transparent;border:none;border-right:2px solid var(--border);color:var(--text2);transition:background .1s}
+.mtab:last-child{border-right:none}.mtab.act{background:var(--tomato);color:white}
+.mtab:hover:not(.act){background:var(--panel)}
+.task-inp{width:100%;background:#0a0a1a;border:2px solid var(--border);color:var(--text);font-family:'VT323',monospace;font-size:1rem;padding:6px 10px;outline:none}
+.task-inp:focus{border-color:var(--tomato)}.task-inp::placeholder{color:#444466}
+.ring-wrap{position:relative;width:160px;height:160px}
+.ring-bg{position:absolute;inset:0;border-radius:50%;border:4px solid var(--border)}
+.ring-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.tdisp{font-family:'Press Start 2P',monospace;font-size:2.6rem;color:var(--tomato2);text-shadow:0 0 24px rgba(255,107,91,.6),4px 4px 0 #7a1010;letter-spacing:2px;line-height:1}
+.tdisp.brk{color:var(--green);text-shadow:0 0 24px rgba(74,222,128,.5),4px 4px 0 #145a2a}
+.plbl{font-family:'Press Start 2P',monospace;font-size:.31rem;color:var(--text2)}
+.pips{display:flex;gap:4px}.pip{font-size:.9rem;opacity:.2;transition:opacity .3s}.pip.done{opacity:1}
+.brow{display:flex;gap:8px}
+/* buff bar */
+.buff-bar{display:flex;gap:6px;flex-wrap:wrap;min-height:22px}
+.buff-tag{font-family:'Press Start 2P',monospace;font-size:.26rem;padding:3px 6px;border:2px solid;animation:fade-in .3s ease-out both}
+/* map tab */
+.mprow{display:flex;align-items:center;gap:9px}
+.mplbl{font-family:'Press Start 2P',monospace;font-size:.34rem;color:var(--text2);white-space:nowrap}
+.mptrack{flex:1;height:12px;background:#0a0a1a;border:2px solid var(--border)}
+.mpfill{height:100%;background:var(--green);box-shadow:0 0 6px var(--green);transition:width .5s steps(8,end)}
+.mpcnt{font-family:'Press Start 2P',monospace;font-size:.34rem;color:var(--green);white-space:nowrap}
+.mcwrap{position:relative;width:100%;height:190px;background:#080814;border:2px solid var(--border);overflow:hidden}
+#mapCanvas{display:block;width:100%;height:100%}
+.mleg{display:flex;gap:10px;flex-wrap:wrap;font-size:.78rem;color:var(--text2)}
+.meb{border:3px solid var(--border2);background:var(--panel2);padding:10px;min-height:72px;display:flex;flex-direction:column;gap:5px}
+.meb.chest{border-color:var(--gold);background:linear-gradient(135deg,#1a1408,var(--panel2))}
+.meb.battle{border-color:var(--hp);background:linear-gradient(135deg,#1a0808,var(--panel2))}
+.meb.merchant{border-color:var(--blue);background:linear-gradient(135deg,#08101a,var(--panel2))}
+.meb.lore{border-color:var(--purple);background:linear-gradient(135deg,#10081a,var(--panel2))}
+.meb.rest{border-color:var(--green);background:linear-gradient(135deg,#08180e,var(--panel2))}
+.meb.boss{border-color:var(--hp);background:linear-gradient(135deg,#200808,var(--panel2));box-shadow:0 0 18px rgba(239,68,68,.25)}
+.met{font-family:'Press Start 2P',monospace;font-size:.4rem}
+.mebody{color:var(--text2);font-size:.84rem;line-height:1.4}
+/* shop tab */
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shop-item{border:2px solid var(--border);background:var(--panel2);padding:12px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s}
+.shop-item:hover{border-color:var(--border2)}
+.shop-item.disabled{opacity:.45}
+.shop-item-icon{font-size:1.6rem;line-height:1}
+.shop-item-name{font-family:'Press Start 2P',monospace;font-size:.36rem;color:var(--gold)}
+.shop-item-desc{font-size:.8rem;color:var(--text2);line-height:1.3;flex:1}
+.shop-item-cost{font-family:'Press Start 2P',monospace;font-size:.32rem;color:var(--gold)}
+.shop-gold{font-family:'Press Start 2P',monospace;font-size:.46rem;color:var(--gold);margin-bottom:6px}
+/* achievements tab */
+.ach-grid{display:flex;flex-direction:column;gap:8px}
+.ach-item{display:flex;gap:12px;align-items:center;padding:10px 12px;border:2px solid var(--border);background:var(--panel2)}
+.ach-item.unlocked{border-color:var(--gold);background:linear-gradient(135deg,#1a1408,var(--panel2))}
+.ach-item.locked{opacity:.5;filter:grayscale(0.6)}
+.ach-icon{font-size:1.8rem;flex-shrink:0;width:36px;text-align:center}
+.ach-info{flex:1}
+.ach-name{font-family:'Press Start 2P',monospace;font-size:.36rem;color:var(--gold);margin-bottom:3px}
+.ach-item.locked .ach-name{color:var(--text2)}
+.ach-desc{font-size:.8rem;color:var(--text2);line-height:1.3}
+.ach-prog{font-family:'Press Start 2P',monospace;font-size:.28rem;color:var(--green);margin-top:3px}
+.ach-item.locked .ach-prog{color:var(--text2)}
+/* boss panel */
+.boss-panel{border:3px solid var(--hp);background:linear-gradient(135deg,#1a0808,var(--panel));padding:13px;box-shadow:0 0 18px rgba(239,68,68,.15)}
+.ptitle{font-family:'Press Start 2P',monospace;font-size:.42rem;color:var(--text2);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.pdot{width:8px;height:8px;display:inline-block;flex-shrink:0}
+.brow2{display:flex;align-items:center;gap:13px}
+.bemoji{font-size:2.3rem;animation:boss-shake 5s ease-in-out infinite}
+@keyframes boss-shake{0%,88%,100%{transform:translateX(0)}91%{transform:translateX(-4px) rotate(-2deg)}95%{transform:translateX(4px) rotate(2deg)}}
+.binfo{flex:1}.bname{font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--hp);margin-bottom:3px}
+.bhptxt{color:var(--text2);font-size:.78rem;margin-bottom:3px}
+.bt.boss{height:13px}
+.bmeta{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
+.bdesc{color:var(--text2);font-size:.78rem}
+.rdmg{font-family:'Press Start 2P',monospace;font-size:.32rem;color:var(--text2)}.rdmg span{color:var(--gold)}
+/* bottom */
+.bg2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.sp{border:3px solid var(--border);background:var(--panel);padding:12px}
+.sp.gb{border-color:var(--gold)}
+.hlist{display:flex;flex-direction:column;gap:5px;max-height:122px;overflow-y:auto}
+.hlist::-webkit-scrollbar{width:4px}.hlist::-webkit-scrollbar-thumb{background:var(--border)}
+.hi{display:flex;gap:8px;align-items:center;padding:4px 6px;background:rgba(255,255,255,.02);border-left:3px solid var(--tomato);font-size:.78rem;color:var(--text2)}
+.ht{white-space:nowrap;font-size:.72rem}.hk{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hx{color:var(--xp);white-space:nowrap;font-family:'Press Start 2P',monospace;font-size:.29rem}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px 9px;font-size:.78rem}
+.sgrid .ssl{color:var(--text2)}
+footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--text2)}
+.sbadge{font-family:'Press Start 2P',monospace;font-size:.36rem;color:var(--gold)}
+/* overlays */
+.xpp{position:fixed;pointer-events:none;z-index:1000;font-family:'Press Start 2P',monospace;font-size:.58rem;color:var(--gold);text-shadow:2px 2px 0 #7a5a00;animation:xpf 1.5s ease-out forwards}
+@keyframes xpf{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.4)}}
+.ov{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.ov.show{opacity:1;pointer-events:all}
+.ovb{border:4px solid var(--gold);background:var(--panel);padding:32px;text-align:center;box-shadow:0 0 60px rgba(245,200,66,.4);animation:lup .5s steps(2) infinite;max-width:400px;width:90%}
+@keyframes lup{0%{box-shadow:0 0 40px rgba(245,200,66,.4)}100%{box-shadow:0 0 80px rgba(245,200,66,.8)}}
+.ovb.ev{border-color:var(--purple);animation:none;box-shadow:0 0 40px rgba(167,139,250,.3)}
+.ovb.ach-ov{border-color:var(--purple);animation:none;box-shadow:0 0 40px rgba(167,139,250,.5)}
+.lu-t{font-family:'Press Start 2P',monospace;font-size:.9rem;color:var(--gold);text-shadow:4px 4px 0 #7a5a00;display:block;margin-bottom:10px}
+.lu-s{font-size:.9rem;color:var(--text2);margin-bottom:14px}
+.lu-n{font-family:'Press Start 2P',monospace;font-size:2.4rem;color:var(--tomato2);display:block;margin:8px 0}
+.lu-sk{font-family:'Press Start 2P',monospace;font-size:.4rem;color:var(--purple);margin-bottom:18px}
+.ev-ic{font-size:2.4rem;margin-bottom:5px;display:block}
+.ev-ti{font-family:'Press Start 2P',monospace;font-size:.5rem;margin-bottom:8px;display:block}
+.ev-bo{font-size:.9rem;color:var(--text2);margin-bottom:12px;line-height:1.5}
+.ev-rw{font-family:'Press Start 2P',monospace;font-size:.38rem;color:var(--green);margin-bottom:16px;display:block}
+/* settings */
+.sov{position:fixed;inset:0;z-index:4500;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.sov.show{opacity:1;pointer-events:all}
+.sovb{border:3px solid var(--border2);background:var(--panel);padding:24px;width:90%;max-width:380px;display:flex;flex-direction:column;gap:14px}
+.sovt{font-family:'Press Start 2P',monospace;font-size:.52rem;color:var(--text);text-align:center}
+.sovr{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--text2)}
+.dbtn{font-family:'Press Start 2P',monospace;font-size:.3rem;background:#2a0808;border:2px solid var(--hp);color:var(--hp);padding:5px 10px;cursor:pointer}
+.dbtn:hover{background:#3a1010}
+@keyframes flash-red{0%,100%{background:linear-gradient(135deg,#1a0808,var(--panel))}50%{background:rgba(239,68,68,.18)}}
+.boss-hit{animation:flash-red .4s ease-out}
+/* notification banner */
+.notif-banner{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9000;
+  font-family:'Press Start 2P',monospace;font-size:.4rem;
+  background:var(--panel);border:3px solid var(--green);color:var(--green);
+  padding:10px 20px;white-space:nowrap;
+  animation:notif-in .3s ease-out both;box-shadow:0 0 20px rgba(74,222,128,.4)}
+@keyframes notif-in{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.notif-banner.warn{border-color:var(--gold);color:var(--gold);box-shadow:0 0 20px rgba(245,200,66,.4)}
+.notif-banner.ach{border-color:var(--purple);color:var(--purple);box-shadow:0 0 20px rgba(167,139,250,.4)}
+@media(max-width:640px){
+  .hero-panel{grid-template-columns:1fr}.bg2{grid-template-columns:1fr}
+  .tdisp{font-size:2rem}.class-grid{grid-template-columns:1fr 1fr}
+  .shop-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<!-- CREATION -->
+<div id="creationScreen">
+<div class="cw">
+  <span class="c-logo">🍅 Tomato<span>Quest</span></span>
+  <div class="c-sub">A NEW HERO AWAKENS</div>
+  <div class="pdots"><div class="pdot active" id="d0"></div><div class="pdot" id="d1"></div><div class="pdot" id="d2"></div><div class="pdot" id="d3"></div></div>
+
+  <!-- STEP 0: NAME -->
+  <div id="s0" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:14px">
+    <div class="step-lbl">STEP 1 OF 4 — NAME YOUR HERO</div>
+    <div class="s0">
+      <input class="name-field" id="heroNm" placeholder="ENTER YOUR NAME" maxlength="14" autocomplete="off" spellcheck="false">
+      <div class="name-hint">Up to 14 characters. Choose wisely.</div>
+      <div class="cnav"><button class="btn btn-g" id="n1btn" onclick="goStep(1)" disabled>NEXT ▶</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 1: CLASS -->
+  <div id="s1" style="display:none;width:100%">
+    <div class="step-lbl">STEP 2 OF 4 — CHOOSE YOUR CLASS</div>
+    <div class="s1">
+      <div class="class-grid">
+        <div class="cc knight" onclick="selClass('knight')" id="ck-knight">
+          <div class="sel-check">✓</div>
+          <div class="cc-sprite" id="cc-spr-knight"></div>
+          <div class="cc-name">KNIGHT</div><div class="cc-tag">WARRIOR</div>
+          <div class="cc-desc">Unyielding. Charges into focus head-on.</div>
+          <div class="cc-bonus">+30% BOSS DAMAGE</div>
+        </div>
+        <div class="cc mage" onclick="selClass('mage')" id="ck-mage">
+          <div class="sel-check">✓</div>
+          <div class="cc-sprite" id="cc-spr-mage"></div>
+          <div class="cc-name">MAGE</div><div class="cc-tag">SCHOLAR</div>
+          <div class="cc-desc">Channels deep work into arcane mastery.</div>
+          <div class="cc-bonus">+30% XP GAIN</div>
+        </div>
+        <div class="cc ranger" onclick="selClass('ranger')" id="ck-ranger">
+          <div class="sel-check">✓</div>
+          <div class="cc-sprite" id="cc-spr-ranger"></div>
+          <div class="cc-name">RANGER</div><div class="cc-tag">EXPLORER</div>
+          <div class="cc-desc">Finds fortune on every road walked.</div>
+          <div class="cc-bonus">+40% GOLD &amp; MAP REWARDS</div>
+        </div>
+        <div class="cc paladin" onclick="selClass('paladin')" id="ck-paladin">
+          <div class="sel-check">✓</div>
+          <div class="cc-sprite" id="cc-spr-paladin"></div>
+          <div class="cc-name">PALADIN</div><div class="cc-tag">GUARDIAN</div>
+          <div class="cc-desc">Endures all. Heals through dedication.</div>
+          <div class="cc-bonus">+25 HP &amp; STRONGER HEALS</div>
+        </div>
+      </div>
+      <div class="cnav">
+        <button class="btn btn-s" onclick="goStep(0)">◀ BACK</button>
+        <button class="btn btn-g" id="n2btn" onclick="goStep(2)" disabled>NEXT ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: CUSTOMISE -->
+  <div id="s2" style="display:none;width:100%">
+    <div class="step-lbl">STEP 3 OF 4 — CUSTOMISE YOUR HERO</div>
+    <div class="cust-wrap">
+      <div class="cust-preview">
+        <div class="cust-preview-lbl">PREVIEW</div>
+        <div class="cust-preview-spr" id="custPrev"></div>
+      </div>
+      <div class="cust-opts">
+        <div class="cust-sec">
+          <div class="cust-sec-lbl">🍅 TOMATO SHADE</div>
+          <div class="cust-row" id="custColors"></div>
+        </div>
+        <div class="cust-sec">
+          <div class="cust-sec-lbl">👁 EYE STYLE</div>
+          <div class="cust-row" id="custEyes"></div>
+        </div>
+      </div>
+    </div>
+    <div class="cnav">
+      <button class="btn btn-s" onclick="goStep(1)">◀ BACK</button>
+      <button class="btn btn-g" onclick="goStep(3)">NEXT ▶</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: CONFIRM -->
+  <div id="s3" style="display:none;width:100%;max-width:400px">
+    <div class="step-lbl">STEP 4 OF 4 — YOUR HERO</div>
+    <div class="s3">
+      <div class="conf-card" id="confCard">
+        <div class="conf-sprite" id="confSpr"></div>
+        <div class="conf-name" id="confNm">HERO</div>
+        <div class="conf-class" id="confCls"></div>
+        <div class="conf-stats" id="confSts"></div>
+      </div>
+      <div class="cnav">
+        <button class="btn btn-s" onclick="goStep(2)">◀ BACK</button>
+        <button class="btn btn-g" onclick="beginQuest()">⚔ BEGIN QUEST</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LEVEL UP -->
+<div class="ov" id="luOv">
+  <div class="ovb">
+    <span class="lu-t">⚔ LEVEL UP! ⚔</span>
+    <div class="lu-s">You have ascended to</div>
+    <span class="lu-n" id="luN">2</span>
+    <div class="lu-s">NEW SKILL UNLOCKED</div>
+    <div class="lu-sk" id="luSk">FOCUS AURA</div>
+    <button class="btn btn-g" onclick="closeLU()">CONTINUE QUEST</button>
+  </div>
+</div>
+
+<!-- MAP EVENT -->
+<div class="ov" id="evOv">
+  <div class="ovb ev">
+    <span class="ev-ic" id="evIc">📦</span>
+    <span class="ev-ti" id="evTi">TREASURE FOUND</span>
+    <div class="ev-bo" id="evBo"></div>
+    <span class="ev-rw" id="evRw">+0 XP</span>
+    <button class="btn btn-g" id="evBtn">CLAIM REWARD</button>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT UNLOCK -->
+<div class="ov" id="achOv">
+  <div class="ovb ach-ov">
+    <div style="font-family:'Press Start 2P',monospace;font-size:.5rem;color:var(--purple);margin-bottom:10px">✦ ACHIEVEMENT UNLOCKED ✦</div>
+    <div style="font-size:3rem;margin-bottom:8px" id="achOvIcon">🏆</div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:.55rem;color:var(--gold);margin-bottom:8px" id="achOvName"></div>
+    <div style="font-size:.9rem;color:var(--text2);margin-bottom:20px" id="achOvDesc"></div>
+    <button class="btn btn-g" onclick="closeAchOv()">CLAIM GLORY</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="sov" id="setOv">
+  <div class="sovb">
+    <div class="sovt">⚙ SETTINGS</div>
+    <div class="sovr"><span>Hero: <span id="setNm" style="color:var(--gold)">—</span></span><span id="setCls" style="color:var(--text2)">—</span></div>
+    <div class="sovr">
+      <span>Notifications</span>
+      <button class="btn btn-s" id="notifBtn" onclick="toggleNotifPerm()" style="font-size:.3rem;padding:5px 8px">REQUEST PERMISSION</button>
+    </div>
+    <div class="sovr"><span>Change character</span><button class="dbtn" onclick="doReroll()">REROLL</button></div>
+    <div class="sovr"><span>Reset ALL progress</span><button class="dbtn" onclick="doReset()">RESET</button></div>
+    <div style="text-align:center"><button class="btn btn-s" onclick="closeSet()">CLOSE</button></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app hidden" id="mainApp">
+  <header>
+    <div class="logo">🍅 Tomato<span>Quest</span></div>
+    <div class="hdr-r">
+      <button class="hbtn" onclick="openSet()">⚙</button>
+      <button class="hbtn" id="musBtn" onclick="toggleMusic()">♪ OFF</button>
+      <div class="day-badge" id="dayB">DAY 1</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:.36rem;color:var(--text2)">🔥<span style="color:var(--gold)" id="strD">0</span></div>
+    </div>
+  </header>
+
+  <div class="hero-panel">
+    <div class="char-card">
+      <div class="hero-spr" id="hspr"></div>
+      <div class="char-nm" id="charNm">HERO</div>
+      <div class="char-cl" id="charCl">⚔ Knight</div>
+      <div class="char-lv">LVL <span id="charLv">1</span></div>
+      <div class="sr"><div class="sl"><span>❤ HP</span><span id="hpV">100/100</span></div><div class="bt"><div class="bf bf-hp" id="hpB" style="width:100%"></div></div></div>
+      <div class="sr"><div class="sl"><span>✨ XP</span><span id="xpV">0/200</span></div><div class="bt"><div class="bf bf-xp" id="xpB" style="width:0%"></div></div></div>
+      <div class="sr"><div class="sl"><span>💧 MP</span><span id="mpV">50/80</span></div><div class="bt"><div class="bf bf-mp" id="mpB" style="width:63%"></div></div></div>
+      <div style="margin-top:3px;color:var(--text2);font-size:.76rem;">🪙<span style="color:var(--gold)" id="goldD">0</span></div>
+      <div class="cls-bonus" id="clsBonus"></div>
+      <div class="buff-bar" id="buffBar"></div>
+    </div>
+
+    <div class="main-area">
+      <div class="tab-bar">
+        <button class="tbtn tq act" onclick="swTab('quest')">📜 QUEST</button>
+        <button class="tbtn tm" onclick="swTab('map')">🗺 MAP</button>
+        <button class="tbtn tsh" onclick="swTab('shop')">🛒 SHOP</button>
+        <button class="tbtn tac" onclick="swTab('ach')">🏆 FEATS</button>
+      </div>
+
+      <!-- QUEST TAB -->
+      <div class="tc act" id="tc-quest">
+        <div class="qb">
+          <div class="qi">📜</div>
+          <div class="qinfo"><div class="qt">ACTIVE QUEST</div><div class="qdesc" id="qDesc">Complete 4 focus sessions</div></div>
+          <div class="qr">+200 XP<br>+50 🪙</div>
+        </div>
+        <div class="timer-box">
+          <div class="mtabs">
+            <button class="mtab act" onclick="setMode('focus',25,'h')">⚔ FOCUS (25m)</button>
+            <button class="mtab" onclick="setMode('short',5,'c')">🛡 SHORT REST</button>
+            <button class="mtab" onclick="setMode('long',15,'c')">🏰 LONG REST</button>
+          </div>
+          <input class="task-inp" id="taskI" placeholder="What are you working on?" maxlength="50">
+          <div class="ring-wrap">
+            <div class="ring-bg"></div>
+            <svg style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)">
+              <circle id="ringC" cx="80" cy="80" r="74" fill="none" stroke="var(--tomato2)" stroke-width="4"
+                stroke-dasharray="465" stroke-dashoffset="0"
+                style="transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 6px var(--tomato2))"/>
+            </svg>
+            <div class="ring-ctr">
+              <div class="tdisp" id="tDisp">25:00</div>
+              <div class="plbl">SESSION</div>
+              <div class="pips" id="pips"><span class="pip">🍅</span><span class="pip">🍅</span><span class="pip">🍅</span><span class="pip">🍅</span></div>
+            </div>
+          </div>
+          <div class="brow">
+            <button class="btn btn-p" id="startB" onclick="toggleTimer()">▶ START</button>
+            <button class="btn btn-s" onclick="resetTimer()">↺ RESET</button>
+            <button class="btn btn-g" onclick="skipSes()">⚡ SKIP</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP TAB -->
+      <div class="tc" id="tc-map">
+        <div class="mprow">
+          <div class="mplbl" id="mapBiome">THE FOGWOOD</div>
+          <div class="mptrack"><div class="mpfill" id="mpFill" style="width:0%"></div></div>
+          <div class="mpcnt" id="mpCnt">0 / 8</div>
+        </div>
+        <div class="mcwrap"><canvas id="mapCanvas"></canvas></div>
+        <div class="mleg"><span id="heroLeg">🍅 You</span><span>📦 Chest</span><span>⚔ Battle</span><span>🏪 Merchant</span><span>📖 Lore</span><span>💤 Rest</span><span>👑 Boss</span></div>
+        <div class="meb" id="meb">
+          <div class="met" id="metT" style="color:var(--text2)">COMPLETE A FOCUS SESSION TO MOVE FORWARD</div>
+          <div class="mebody" id="mebB">Each pomodoro advances your hero one step. New encounters await!</div>
+        </div>
+      </div>
+
+      <!-- SHOP TAB -->
+      <div class="tc" id="tc-shop">
+        <div class="shop-gold">🪙 <span id="shopGold">0</span> Gold available</div>
+        <div class="shop-grid" id="shopGrid"></div>
+      </div>
+
+      <!-- ACHIEVEMENTS TAB -->
+      <div class="tc" id="tc-ach">
+        <div class="ach-grid" id="achGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOSS -->
+  <div class="boss-panel" id="bossP">
+    <div class="ptitle"><div class="pdot" style="background:var(--hp)"></div> CURRENT BOSS</div>
+    <div class="brow2">
+      <div class="bemoji" id="bEmoji">🐉</div>
+      <div class="binfo">
+        <div class="bname" id="bName">DISTRACTION DRAGON</div>
+        <div class="bhptxt">HP: <span id="bHpV">5,000</span> / <span id="bHpM">5,000</span></div>
+        <div class="bt boss"><div class="bf bf-hp" id="bHpB" style="width:100%"></div></div>
+      </div>
+    </div>
+    <div class="bmeta"><div class="bdesc">⚔ Each focus session deals damage!</div><div class="rdmg" id="rdmg">Last hit: <span>—</span></div></div>
+  </div>
+
+  <div class="bg2">
+    <div class="sp">
+      <div class="ptitle"><div class="pdot" style="background:var(--tomato)"></div> SESSION LOG</div>
+      <div class="hlist" id="hList"><div style="color:var(--text2);font-size:.8rem;padding:5px">No sessions yet!</div></div>
+    </div>
+    <div class="sp gb">
+      <div class="ptitle"><div class="pdot" style="background:var(--gold)"></div> STATS</div>
+      <div class="sgrid">
+        <div class="ssl">🍅 Sessions</div><div style="color:var(--tomato2)" id="sP">0</div>
+        <div class="ssl">⏱ Focus time</div><div style="color:var(--blue)" id="sM">0 min</div>
+        <div class="ssl">🐉 Bosses slain</div><div style="color:var(--hp)" id="sB">0</div>
+        <div class="ssl">🏆 Feats earned</div><div style="color:var(--purple)" id="sA">0</div>
+        <div class="ssl">🪙 Gold spent</div><div style="color:var(--gold)" id="sGs">0</div>
+        <div class="ssl">🗺 Roads walked</div><div style="color:var(--green)" id="sR">0</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div>🍅<span style="color:var(--tomato2)" id="fP">0</span> today</div>
+    <div class="sbadge">🔥<span id="fS">0</span>-DAY STREAK</div>
+    <div>LVL<span style="color:var(--purple)" id="fL">1</span> <span id="fCls">Knight</span></div>
+  </footer>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   GAME DATA CONSTANTS  (must be first)
+══════════════════════════════════════════ */
+const BOSSES=[
+  {n:'DISTRACTION DRAGON',e:'🐉',hp:5000},
+  {n:'PROCRASTINATION LICH',e:'💀',hp:6500},
+  {n:'DOOM SCROLLING HYDRA',e:'🐍',hp:4500},
+  {n:'MEETING MONSTER',e:'👾',hp:7200},
+  {n:'NOTIFICATION WRAITH',e:'👻',hp:5500},
+  {n:'BURNOUT BASILISK',e:'🦎',hp:8000},
+];
+const QUESTS=[
+  'Slay the Distraction Dragon with 4 focus sessions',
+  "The Scholar's Trial — earn 300 XP today",
+  'Forge the Iron Tome — 3 sessions on one task',
+  'The Endless March — maintain a 3-day streak',
+  'Land the killing blow on the Procrastination Lich',
+  'Reach Level 5 — prove your worth',
+];
+const CLS={
+  knight:{name:'Knight',sprite:'knight',color:'var(--hp)',tag:'WARRIOR',hp:110,mp:50,bossMult:1.3,xpMult:1.0,goldMult:1.0,bonus:'⚔ +30% boss damage',skills:['IRON CHARGE','SHIELD BASH','BATTLE CRY','LAST STAND','WAR HYMN','BERSERKER']},
+  mage:  {name:'Mage',  sprite:'mage',  color:'var(--purple)',tag:'SCHOLAR',hp:80,mp:100,bossMult:1.0,xpMult:1.3,goldMult:1.0,bonus:'✨ +30% XP gain',skills:['ARCANE BOLT','MANA SURGE','TIME WARP','FOCUS NOVA','VOID STEP','MIND BIND']},
+  ranger:{name:'Ranger',sprite:'ranger',color:'var(--green)',tag:'EXPLORER',hp:90,mp:70,bossMult:1.0,xpMult:1.0,goldMult:1.4,bonus:'🪙 +40% gold & map rewards',skills:['EAGLE EYE','TREASURE SENSE','SWIFT SHOT','PATHFINDER','TRAP MASTER','WIND STEP']},
+  paladin:{name:'Paladin',sprite:'paladin',color:'var(--gold)',tag:'GUARDIAN',hp:135,mp:60,bossMult:1.0,xpMult:1.0,goldMult:1.0,bonus:'❤ +25 HP & stronger heals',skills:['HOLY LIGHT','DIVINE SHIELD','SACRED OATH','RESTORATION','AURA OF WILL','JUDGMENT']},
+};
+const BIOMES=[
+  {name:'THE FOGWOOD',sky:'#080d14',gr:'#0d1a0a',rd:'#1a2a14',tr:'🌲',ac:'#2d4a20'},
+  {name:'EMBER WASTES',sky:'#140808',gr:'#1a0d08',rd:'#2a1a08',tr:'🌋',ac:'#4a2010'},
+  {name:'CRYSTAL PEAKS',sky:'#08080d',gr:'#0d0d1a',rd:'#141428',tr:'⛰',ac:'#202040'},
+  {name:'SUNDRIFT PLAINS',sky:'#0d0d08',gr:'#141408',rd:'#201e0a',tr:'🌾',ac:'#2a2a10'},
+  {name:'HAUNTED MOOR',sky:'#0a080f',gr:'#100810',rd:'#180a18',tr:'🕸',ac:'#200020'},
+];
+const EP=['chest','battle','merchant','lore','rest'];
+
+/* ══════════════════════════════════════════
+   SHOP ITEMS
+══════════════════════════════════════════ */
+const SHOP_ITEMS=[
+  {id:'xp_potion',  name:'FOCUS ELIXIR',  icon:'⚗',cost:40, desc:'Next session earns 2× XP', effect:'xp2x', duration:1},
+  {id:'gold_charm', name:'LUCKY CHARM',   icon:'🍀',cost:30, desc:'Next session drops 2× gold',effect:'gold2x',duration:1},
+  {id:'dmg_rune',   name:'WAR RUNE',      icon:'🔥',cost:50, desc:'Next boss hit deals 3× damage',effect:'dmg3x',duration:1},
+  {id:'heal_herb',  name:'HEALING HERB',  icon:'🌿',cost:25, desc:'Restore 30 HP instantly',    effect:'heal30',duration:0},
+  {id:'xp_tome',    name:'ARCANE TOME',   icon:'📚',cost:80, desc:'Instantly gain 150 XP',      effect:'xp150', duration:0},
+  {id:'mp_crystal', name:'MANA CRYSTAL',  icon:'💎',cost:35, desc:'Restore full MP',            effect:'fullmp', duration:0},
+];
+
+/* ══════════════════════════════════════════
+   ACHIEVEMENTS
+══════════════════════════════════════════ */
+const ACHIEVEMENTS=[
+  {id:'first_blood',   name:'FIRST BLOOD',     icon:'🍅', desc:'Complete your very first focus session',   check:G=>G.totalPoms>=1},
+  {id:'pom5',          name:'FIVE A DAY',       icon:'🍅', desc:'Complete 5 focus sessions in a single day',check:G=>G.todayPoms>=5},
+  {id:'pom25',         name:'TOMATO VETERAN',   icon:'🏅', desc:'Complete 25 focus sessions total',         check:G=>G.totalPoms>=25},
+  {id:'pom100',        name:'CENTURION',        icon:'💯', desc:'Complete 100 focus sessions total',        check:G=>G.totalPoms>=100},
+  {id:'streak3',       name:'HAT TRICK',        icon:'🔥', desc:'Maintain a 3-day streak',                  check:G=>G.streak>=3},
+  {id:'streak7',       name:'WEEK WARRIOR',     icon:'🗓', desc:'Maintain a 7-day streak',                  check:G=>G.streak>=7},
+  {id:'boss1',         name:'DRAGON SLAYER',    icon:'🐉', desc:'Slay your first boss',                     check:G=>G.bossesSlain>=1},
+  {id:'boss5',         name:'MONSTER HUNTER',   icon:'⚔', desc:'Slay 5 bosses',                            check:G=>G.bossesSlain>=5},
+  {id:'lv5',           name:'RISING HERO',      icon:'⬆', desc:'Reach Level 5',                            check:G=>G.level>=5},
+  {id:'lv10',          name:'LEGEND',           icon:'👑', desc:'Reach Level 10',                           check:G=>G.level>=10},
+  {id:'gold500',       name:'COIN HOARDER',     icon:'🪙', desc:'Accumulate 500 gold total',                check:G=>G.totalGoldEarned>=500},
+  {id:'road7',         name:'LONG ROAD',        icon:'🗺', desc:'Complete 7 daily roads',                   check:G=>G.roadsCompleted>=7},
+  {id:'hour1',         name:'FOCUSED HOUR',     icon:'⏱', desc:'Accumulate 60 minutes of focus time',     check:G=>G.totalMins>=60},
+  {id:'hour10',        name:'DEEP WORKER',      icon:'🧘', desc:'Accumulate 10 hours of focus time',       check:G=>G.totalMins>=600},
+  {id:'shop1',         name:'SHOPKEEPER\'S PAL',icon:'🛒', desc:'Buy your first item from the shop',        check:G=>G.goldSpent>=1},
+];
+
+/* ══════════════════════════════════════════
+   TOMATO SPRITE SYSTEM
+══════════════════════════════════════════ */
+const TOM_COLORS=[
+  {name:'Classic',body:'#e8433a',shade:'#c43020',hi:'#ff7a6a'},
+  {name:'Cherry', body:'#cc2244',shade:'#aa1133',hi:'#ee4466'},
+  {name:'Sunset', body:'#f07020',shade:'#c05010',hi:'#ff9040'},
+  {name:'Golden', body:'#e0b020',shade:'#b08010',hi:'#ffd040'},
+  {name:'Green',  body:'#40a030',shade:'#287020',hi:'#60c050'},
+  {name:'Purple', body:'#8844cc',shade:'#6622aa',hi:'#aa66ee'},
+];
+const TOM_EYES=['normal','happy','cool','star','tired','fierce'];
+let tomColor=0,tomEye=0,tomClass='knight';
+
+function tomatoSVG(cls,colorIdx,eyeStyle,size){
+  const sz=size||80,col=TOM_COLORS[colorIdx||0]||TOM_COLORS[0],eye=TOM_EYES[eyeStyle||0]||'normal';
+  const gear={
+    knight: {c1:'#aaaacc',c2:'#7777aa',acc:'#f5c842',weapon:'sword'},
+    mage:   {c1:'#6644aa',c2:'#4422aa',acc:'#a0c0ff',weapon:'staff'},
+    ranger: {c1:'#5a8840',c2:'#3a6020',acc:'#c8a020',weapon:'bow'},
+    paladin:{c1:'#d4b040',c2:'#b08820',acc:'#ffffff',weapon:'shield'},
+  };
+  const g=gear[cls]||gear.knight;
+  function eyePair(s){
+    if(s==='happy') return `<path d="M30 38 Q33 34 36 38" stroke="#1a1a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M44 38 Q47 34 50 38" stroke="#1a1a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    if(s==='cool')  return `<line x1="28" y1="37" x2="37" y2="37" stroke="#1a1a2a" stroke-width="3" stroke-linecap="round"/><line x1="43" y1="37" x2="52" y2="37" stroke="#1a1a2a" stroke-width="3" stroke-linecap="round"/>`;
+    if(s==='star')  return `<text x="33" y="41" text-anchor="middle" font-size="9" fill="#1a1a2a">★</text><text x="47" y="41" text-anchor="middle" font-size="9" fill="#1a1a2a">★</text>`;
+    if(s==='tired') return `<path d="M28 39 Q33 36 37 39" stroke="#1a1a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M43 39 Q47 36 52 39" stroke="#1a1a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    if(s==='fierce')return `<path d="M29 35 L37 39" stroke="#1a1a2a" stroke-width="2.5" stroke-linecap="round"/><circle cx="33" cy="39" r="3.5" fill="#1a1a2a"/><path d="M51 35 L43 39" stroke="#1a1a2a" stroke-width="2.5" stroke-linecap="round"/><circle cx="47" cy="39" r="3.5" fill="#1a1a2a"/>`;
+    return `<circle cx="33" cy="38" r="4" fill="#1a1a2a"/><circle cx="47" cy="38" r="4" fill="#1a1a2a"/><circle cx="34.5" cy="36.5" r="1.5" fill="white"/><circle cx="48.5" cy="36.5" r="1.5" fill="white"/>`;
+  }
+  function wpn(t){
+    if(t==='sword') return `<rect x="62" y="26" width="4" height="28" rx="1" fill="${g.c1}"/><rect x="58" y="36" width="12" height="4" rx="1" fill="${g.acc}"/><rect x="62" y="24" width="4" height="5" rx="1" fill="${g.acc}"/>`;
+    if(t==='staff') return `<rect x="63" y="18" width="3" height="40" rx="1" fill="${g.c2}"/><circle cx="64.5" cy="18" r="6" fill="${g.acc}" opacity="0.9"/><circle cx="64.5" cy="18" r="4" fill="white" opacity="0.4"/>`;
+    if(t==='bow')   return `<path d="M62 22 Q72 40 62 58" stroke="${g.c2}" stroke-width="3" fill="none" stroke-linecap="round"/><line x1="62" y1="22" x2="62" y2="58" stroke="${g.acc}" stroke-width="1.5" stroke-dasharray="3,2"/>`;
+    return `<path d="M60 30 L72 30 L72 50 Q66 58 60 50 Z" fill="${g.c1}" stroke="${g.c2}" stroke-width="2"/><path d="M66 33 L66 47 M62 40 L70 40" stroke="${g.acc}" stroke-width="2"/>`;
+  }
+  function leftItem(cls){
+    if(cls==='knight') return `<path d="M18 42 L6 42 L6 58 Q12 64 18 58 Z" fill="${g.c1}" stroke="${g.c2}" stroke-width="1.5"/><line x1="12" y1="45" x2="12" y2="56" stroke="${g.acc}" stroke-width="1.5"/>`;
+    if(cls==='mage')   return `<rect x="5" y="38" width="14" height="18" rx="2" fill="${g.c2}"/><rect x="7" y="40" width="10" height="2" rx="1" fill="${g.acc}" opacity="0.7"/>`;
+    if(cls==='ranger') return `<rect x="8" y="36" width="5" height="20" rx="2" fill="${g.c2}"/><line x1="10.5" y1="40" x2="10.5" y2="52" stroke="${g.acc}" stroke-width="1"/>`;
+    return `<circle cx="12" cy="48" r="8" fill="${g.c1}" stroke="${g.acc}" stroke-width="1.5"/><path d="M12 42 L12 54 M6 48 L18 48" stroke="${g.acc}" stroke-width="2"/>`;
+  }
+  function hat(cls){
+    if(cls==='knight') return `<path d="M22 22 Q40 10 58 22 L56 32 Q40 26 24 32 Z" fill="${g.c1}"/><rect x="28" y="28" width="24" height="6" rx="2" fill="${g.c2}"/><rect x="34" y="29" width="12" height="4" rx="1" fill="#333355" opacity="0.8"/>`;
+    if(cls==='mage')   return `<polygon points="40,2 25,30 55,30" fill="${g.c2}"/><polygon points="40,2 28,28 52,28" fill="${g.c1}" opacity="0.7"/><rect x="22" y="27" width="36" height="6" rx="3" fill="${g.c2}"/><circle cx="40" cy="5" r="3" fill="${g.acc}"/>`;
+    if(cls==='ranger') return `<path d="M22 26 Q40 12 58 26 Q50 20 40 18 Q30 20 22 26" fill="${g.c1}"/><rect x="24" y="24" width="32" height="5" rx="2.5" fill="${g.c2}"/>`;
+    return `<circle cx="40" cy="18" r="14" fill="none" stroke="${g.acc}" stroke-width="3" opacity="0.8"/><circle cx="40" cy="18" r="14" fill="${g.acc}" opacity="0.15"/><path d="M28 20 L30 14 L32 20 L34 14 L36 20 L38 14 L40 20 L42 14 L44 20 L46 14 L48 20 L50 14 L52 20" fill="${g.acc}" opacity="0.9"/>`;
+  }
+  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}">
+  <ellipse cx="40" cy="76" rx="18" ry="4" fill="rgba(0,0,0,0.3)"/>
+  <rect x="28" y="64" width="8" height="10" rx="3" fill="${g.c1}"/><rect x="44" y="64" width="8" height="10" rx="3" fill="${g.c1}"/>
+  <rect x="26" y="70" width="12" height="6" rx="3" fill="${g.c2}"/><rect x="42" y="70" width="12" height="6" rx="3" fill="${g.c2}"/>
+  <rect x="25" y="55" width="30" height="16" rx="4" fill="${g.c1}"/>
+  <rect x="25" y="62" width="30" height="4" fill="${g.c2}"/><rect x="37" y="61" width="6" height="6" rx="1" fill="${g.acc}"/>
+  <rect x="14" y="56" width="12" height="8" rx="4" fill="${g.c1}"/><rect x="54" y="56" width="12" height="8" rx="4" fill="${g.c1}"/>
+  ${leftItem(cls)}${wpn(g.weapon)}
+  <circle cx="40" cy="38" r="22" fill="${col.body}"/>
+  <ellipse cx="35" cy="30" rx="10" ry="8" fill="${col.hi}" opacity="0.35"/>
+  <ellipse cx="46" cy="48" rx="8" ry="6" fill="${col.shade}" opacity="0.3"/>
+  <circle cx="28" cy="44" r="5" fill="${col.shade}" opacity="0.35"/><circle cx="52" cy="44" r="5" fill="${col.shade}" opacity="0.35"/>
+  ${eyePair(eye)}
+  <path d="M34 48 Q40 54 46 48" stroke="#1a1a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <rect x="37" y="10" width="6" height="12" rx="2" fill="#4a9a30"/>
+  <path d="M40 14 Q48 8 52 16 Q44 14 40 14" fill="#5aba3a"/><path d="M40 14 Q32 8 28 16 Q36 14 40 14" fill="#4aa828"/>
+  <rect x="38.5" y="8" width="3" height="5" rx="1.5" fill="#3a8a20"/>
+  ${hat(cls)}
+</svg>`;
+}
+
+/* ══════════════════════════════════════════
+   CHIPTUNE
+══════════════════════════════════════════ */
+let AC=null,MG=null,mOn=false,sTmr=null,lStart=0,lStep=0;
+const BPM=126,ST=60/BPM/2;
+const Nf={C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,B3:246.94,C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880,_:0};
+const MEL=['C5','_','E5','_','G5','E5','C5','_','F5','_','A5','F5','D5','E5','F5','_','G5','F5','E5','D5','C5','_','E5','G5','A5','G5','F5','E5','D5','_','C5','_','E5','G5','A5','_','G5','F5','E5','_','C5','E5','G5','A5','G5','_','F5','_','D5','F5','A5','F5','E5','D5','C5','_','G4','A4','B4','C5','D5','E5','C5','_','C5','E5','G5','C5','E5','G5','A5','_','F5','_','D5','F5','A5','F5','D5','_','G5','_','E5','G5','B5','G5','E5','_','C5','D5','E5','F5','G5','_','C5','_','A5','G5','F5','E5','D5','_','E5','_','F5','E5','D5','C5','B4','_','C5','_','G4','A4','B4','C5','D5','E5','F5','G5','C5','_','G4','_','C5','_','_','_'].map(k=>Nf[k]||0);
+const BAS=['C3','_','_','_','G3','_','_','_','F3','_','_','_','G3','_','_','_','A3','_','_','_','F3','_','_','_','G3','_','_','_','C3','_','_','_','C3','_','_','_','F3','_','_','_','G3','_','_','_','A3','_','_','_','D3','_','_','_','G3','_','_','_','F3','_','_','_','C3','_','_','_','A3','_','_','_','F3','_','_','_','G3','_','_','_','C3','_','_','_','F3','_','_','_','C3','_','_','_','G3','_','_','_','A3','_','_','_','D3','_','_','_','G3','_','_','_','A3','_','_','_','F3','_','_','_','C3','_','_','_','G3','_','_','_','C3','_','_','_','_','_','_','_'].map(k=>Nf[k]||0);
+const ARP=['C4','E4','G4','C5','G3','B3','D4','G4','F3','A3','C4','F4','G3','B3','D4','G4','A3','C4','E4','A4','F3','A3','C4','F4','G3','B3','D4','G4','C4','E4','G4','C5','C4','E4','G4','C5','F3','A3','C4','F4','G3','B3','D4','G4','A3','C4','E4','A4','D3','F3','A3','D4','G3','B3','D4','G4','F3','A3','C4','F4','C4','E4','G4','C5','A3','C4','E4','A4','F3','A3','C4','F4','G3','B3','D4','G4','C4','E4','G4','C5','F3','A3','C4','F4','C4','E4','G4','C5','G3','B3','D4','G4','A3','C4','E4','A4','D4','F4','A4','D5','G3','B3','D4','G4','A3','C4','E4','A4','F3','A3','C4','F4','C4','E4','G4','C5','G3','B3','D4','G4','C4','E4','G4','_','C4','_','_','_'].map(k=>Nf[k]||0);
+const DRM=[1,0,3,0,2,0,3,0,1,3,3,0,2,0,3,0,1,0,3,0,2,0,3,0,1,3,3,0,2,3,3,0,1,0,3,0,2,0,3,0,1,3,3,0,2,0,3,0,1,0,3,0,2,0,3,0,1,3,3,0,2,3,1,3,1,0,3,0,2,0,3,3,1,0,3,0,2,0,3,0,1,3,3,0,2,0,3,0,1,0,3,0,2,3,3,0,1,0,3,0,2,0,3,0,1,3,3,0,2,0,3,3,1,0,3,0,2,0,3,0,1,3,3,3,2,0,1,0];
+const LL=MEL.length;
+function gAC(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC}
+function gMG(){const ac=gAC();if(!MG){MG=ac.createGain();MG.gain.value=0.15;MG.connect(ac.destination)}return MG}
+function oscN(ac,d,t,f,v,w,du){if(!f)return;const o=ac.createOscillator(),g=ac.createGain();o.type=t;o.frequency.setValueAtTime(f,w);g.gain.setValueAtTime(v,w);g.gain.exponentialRampToValueAtTime(0.0001,w+du);o.connect(g);g.connect(d);o.start(w);o.stop(w+du+.05)}
+function drmN(ac,d,t,w){if(!t)return;const sr=ac.sampleRate,len=t===3?Math.floor(sr*.04):Math.floor(sr*.12),b=ac.createBuffer(1,len,sr),da=b.getChannelData(0);if(t===1){for(let i=0;i<len;i++)da[i]=Math.sin(6.28*(80-i*.5)*i/sr)*Math.exp(-i/600)}else if(t===2){for(let i=0;i<len;i++)da[i]=(Math.random()*2-1)*Math.exp(-i/350)*.65}else{for(let i=0;i<len;i++)da[i]=(Math.random()*2-1)*Math.exp(-i/150)*.3}const s=ac.createBufferSource(),g=ac.createGain();g.gain.value=t===3?.35:.55;s.buffer=b;s.connect(g);g.connect(d);s.start(w)}
+function schM(){if(!mOn)return;const ac=gAC(),d=gMG(),now=ac.currentTime,L=3;for(let i=0;i<L;i++){const si=(lStep+i)%LL,w=lStart+(lStep+i)*ST;if(w<now-.01)continue;if(MEL[si])oscN(ac,d,'square',MEL[si],.14,w,ST*.82);if(si%4===0&&BAS[si])oscN(ac,d,'triangle',BAS[si],.2,w,ST*3.6);if(ARP[si])oscN(ac,d,'triangle',ARP[si]*2,.045,w,ST*.38);drmN(ac,d,DRM[si],w)}lStep+=L;if(lStep>=LL){lStep=0;lStart+=LL*ST}sTmr=setTimeout(schM,ST*L*750)}
+function startMus(){const ac=gAC();if(ac.state==='suspended')ac.resume();lStart=ac.currentTime+.08;lStep=0;mOn=true;schM();document.getElementById('musBtn').textContent='♪ ON';document.getElementById('musBtn').classList.add('on');save({musicOn:true})}
+function stopMus(){mOn=false;clearTimeout(sTmr);document.getElementById('musBtn').textContent='♪ OFF';document.getElementById('musBtn').classList.remove('on');save({musicOn:false})}
+function toggleMusic(){mOn?stopMus():startMus()}
+function sfx(t){try{const ac=gAC();if(ac.state==='suspended')ac.resume();const g=ac.createGain();g.gain.value=0.2;g.connect(ac.destination);const now=ac.currentTime;if(t==='start'){oscN(ac,g,'square',440,.3,now,.08);oscN(ac,g,'square',550,.3,now+.09,.08);oscN(ac,g,'square',660,.3,now+.18,.12)}else if(t==='done'){[523,659,784,1047].forEach((f,i)=>oscN(ac,g,'square',f,.2,now+i*.1,.15))}else if(t==='lv'){[262,330,392,523,659,784,1047].forEach((f,i)=>oscN(ac,g,'square',f,.16,now+i*.08,.13))}else if(t==='hit'){oscN(ac,g,'sawtooth',160,.32,now,.06);oscN(ac,g,'sawtooth',110,.22,now+.06,.09)}else if(t==='chest'){oscN(ac,g,'square',784,.22,now,.08);oscN(ac,g,'square',988,.22,now+.09,.08);oscN(ac,g,'square',1175,.22,now+.18,.18)}else if(t==='buy'){oscN(ac,g,'square',523,.2,now,.06);oscN(ac,g,'square',659,.2,now+.07,.06);oscN(ac,g,'square',784,.2,now+.14,.12)}else if(t==='ach'){[392,523,659,784,1047].forEach((f,i)=>oscN(ac,g,'square',f,.18,now+i*.07,.14))}else if(t==='alarm'){for(let i=0;i<4;i++){oscN(ac,g,'square',880,.25,now+i*.3,.2);oscN(ac,g,'square',660,.2,now+i*.3+.22,.08)}}
+  }catch(e){}}
+
+/* ══════════════════════════════════════════
+   STORAGE
+══════════════════════════════════════════ */
+const LK='tomatoquest_v5';
+function defs(){return{
+  heroName:'',heroClass:'',tomColor:0,tomEye:0,
+  level:1,xp:0,xpMax:200,hp:100,hpMax:100,mp:50,mpMax:80,
+  gold:0,totalGoldEarned:0,goldSpent:0,
+  totalPoms:0,todayPoms:0,totalMins:0,
+  bossesSlain:0,bossHp:5000,bossHpMax:5000,bossIdx:0,
+  streak:0,bestStreak:0,lastDate:'',startDay:new Date().toDateString(),
+  pomPhase:0,history:[],musicOn:false,notifGranted:false,
+  mapSeed:0,mapStep:0,mapDate:'',mapClaimed:[],roadsCompleted:0,
+  achievements:[],
+  buffs:{},  // {effectId: sessionsRemaining}
+}}
+function load(){try{const r=localStorage.getItem(LK);return r?{...defs(),...JSON.parse(r)}:defs()}catch(e){return defs()}}
+function save(p){Object.assign(G,p);try{localStorage.setItem(LK,JSON.stringify(G))}catch(e){}}
+let G=load();
+
+(function(){
+  const today=new Date().toDateString();
+  if(G.lastDate!==today){
+    const yd=new Date(Date.now()-86400000).toDateString();
+    const str=G.lastDate===yd?G.streak+1:(G.lastDate?1:G.streak);
+    save({todayPoms:0,lastDate:today,streak:str,bestStreak:Math.max(str,G.bestStreak||0)});
+  }
+  if(G.mapDate!==today){
+    save({mapDate:today,mapSeed:Math.floor(Math.random()*999999),mapStep:0,mapClaimed:[],roadsCompleted:(G.mapDate?G.roadsCompleted+1:G.roadsCompleted)||0});
+  }
+})();
+
+function getDN(){return Math.max(1,Math.floor((new Date()-new Date(G.startDay))/86400000)+1)}
+function gCls(){return CLS[G.heroClass]||CLS.knight}
+
+let T={run:false,mode:'focus',tot:25*60,rem:25*60,iv:null};
+
+/* ══════════════════════════════════════════
+   NOTIFICATIONS
+══════════════════════════════════════════ */
+function toggleNotifPerm(){
+  if(!('Notification' in window)){showBanner('Notifications not supported in this browser','warn');return}
+  Notification.requestPermission().then(p=>{
+    save({notifGranted:p==='granted'});
+    updateNotifBtn();
+    if(p==='granted')showBanner('🔔 Notifications enabled!','');
+    else showBanner('Notification permission denied','warn');
+  });
+}
+function updateNotifBtn(){
+  const btn=document.getElementById('notifBtn');if(!btn)return;
+  const perm='Notification' in window?Notification.permission:'denied';
+  btn.textContent=perm==='granted'?'ENABLED ✓':perm==='denied'?'BLOCKED':'REQUEST PERMISSION';
+  btn.style.borderColor=perm==='granted'?'var(--green)':perm==='denied'?'var(--hp)':'';
+  btn.style.color=perm==='granted'?'var(--green)':perm==='denied'?'var(--hp)':'';
+}
+function sendNotif(title,body,icon='🍅'){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>',silent:false})}catch(e){}
+}
+function showBanner(msg,type=''){
+  const el=document.createElement('div');
+  el.className='notif-banner'+(type?' '+type:'');
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>{el.style.transition='opacity .4s';el.style.opacity='0';setTimeout(()=>el.remove(),400)},3000);
+}
+
+/* ══════════════════════════════════════════
+   BUFFS
+══════════════════════════════════════════ */
+function hasBuff(id){return (G.buffs||{})[id]>0}
+function consumeBuff(id){
+  const b={...G.buffs};
+  if(b[id]>0){b[id]--;if(b[id]<=0)delete b[id];}
+  save({buffs:b});
+  renderBuffBar();
+}
+function addBuff(id,dur){
+  const b={...G.buffs};
+  b[id]=(b[id]||0)+dur;
+  save({buffs:b});
+  renderBuffBar();
+}
+function renderBuffBar(){
+  const el=document.getElementById('buffBar');if(!el)return;
+  const buffs=G.buffs||{};
+  el.innerHTML=Object.entries(buffs).map(([id,dur])=>{
+    const item=SHOP_ITEMS.find(i=>i.effect===id);
+    const col={xp2x:'var(--xp)',gold2x:'var(--gold)',dmg3x:'var(--hp)'}[id]||'var(--blue)';
+    return `<div class="buff-tag" style="color:${col};border-color:${col}">${item?item.icon:'✨'}×${dur}</div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════
+   SHOP
+══════════════════════════════════════════ */
+function renderShop(){
+  document.getElementById('shopGold').textContent=G.gold.toLocaleString();
+  const grid=document.getElementById('shopGrid');
+  grid.innerHTML=SHOP_ITEMS.map(item=>{
+    const canBuy=G.gold>=item.cost;
+    return `<div class="shop-item${canBuy?'':' disabled'}">
+      <div class="shop-item-icon">${item.icon}</div>
+      <div class="shop-item-name">${item.name}</div>
+      <div class="shop-item-desc">${item.desc}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <div class="shop-item-cost">🪙 ${item.cost}</div>
+        <button class="btn btn-g" style="font-size:.28rem;padding:5px 8px" ${canBuy?'':'disabled'} onclick="buyItem('${item.id}')">BUY</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function buyItem(id){
+  const item=SHOP_ITEMS.find(i=>i.id===id);
+  if(!item||G.gold<item.cost)return;
+  sfx('buy');
+  save({gold:G.gold-item.cost,goldSpent:(G.goldSpent||0)+item.cost});
+  // Apply effect
+  if(item.duration>0){
+    addBuff(item.effect,item.duration);
+    showBanner(`${item.icon} ${item.name} activated! (${item.duration} session${item.duration>1?'s':''})`,'');
+  } else {
+    if(item.effect==='heal30'){const hp=Math.min(G.hpMax,G.hp+30);save({hp});showBanner('🌿 Restored 30 HP!','')}
+    else if(item.effect==='xp150'){gainXP(150);showBanner('📚 +150 XP!','')}
+    else if(item.effect==='fullmp'){save({mp:G.mpMax});showBanner('💎 MP fully restored!','')}
+  }
+  checkAchievements();
+  updateUI();renderShop();
+}
+
+/* ══════════════════════════════════════════
+   ACHIEVEMENTS
+══════════════════════════════════════════ */
+let pendingAchQueue=[];
+let showingAch=false;
+
+function checkAchievements(){
+  const unlocked=G.achievements||[];
+  ACHIEVEMENTS.forEach(a=>{
+    if(!unlocked.includes(a.id)&&a.check(G)){
+      unlocked.push(a.id);
+      pendingAchQueue.push(a);
+    }
+  });
+  save({achievements:unlocked});
+  drainAchQueue();
+  renderAchievements();
+  updateUI();
+}
+function drainAchQueue(){
+  if(showingAch||pendingAchQueue.length===0)return;
+  const a=pendingAchQueue.shift();
+  showingAch=true;
+  sfx('ach');
+  document.getElementById('achOvIcon').textContent=a.icon;
+  document.getElementById('achOvName').textContent=a.name;
+  document.getElementById('achOvDesc').textContent=a.desc;
+  document.getElementById('achOv').classList.add('show');
+  showBanner(`✦ Achievement: ${a.name}!`,'ach');
+}
+function closeAchOv(){
+  document.getElementById('achOv').classList.remove('show');
+  showingAch=false;
+  setTimeout(drainAchQueue,400);
+}
+function renderAchievements(){
+  const unlocked=G.achievements||[];
+  const grid=document.getElementById('achGrid');
+  if(!grid)return;
+  grid.innerHTML=ACHIEVEMENTS.map(a=>{
+    const done=unlocked.includes(a.id);
+    // Progress hint
+    let prog='';
+    if(!done){
+      if(a.id.startsWith('pom'))prog=`${G.totalPoms} / ${a.check.toString().match(/>=(\d+)/)?.[1]||'?'}`;
+      else if(a.id.startsWith('streak'))prog=`${G.streak} day streak`;
+      else if(a.id.startsWith('boss'))prog=`${G.bossesSlain} slain`;
+      else if(a.id.startsWith('lv'))prog=`Level ${G.level}`;
+      else if(a.id==='gold500')prog=`${G.totalGoldEarned||0} gold earned`;
+      else if(a.id==='road7')prog=`${G.roadsCompleted||0} roads`;
+      else if(a.id.startsWith('hour'))prog=`${G.totalMins} min`;
+      else if(a.id==='shop1')prog=`${G.goldSpent||0} gold spent`;
+      else if(a.id==='pom5')prog=`${G.todayPoms} today`;
+    }
+    return `<div class="ach-item${done?' unlocked':' locked'}">
+      <div class="ach-icon">${done?a.icon:'❓'}</div>
+      <div class="ach-info">
+        <div class="ach-name">${done?a.name:'???'}</div>
+        <div class="ach-desc">${done?a.desc:'Complete to reveal'}</div>
+        ${prog?`<div class="ach-prog">${prog}</div>`:''}
+      </div>
+      ${done?'<div style="font-size:1.2rem">✓</div>':''}
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════
+   CREATION
+══════════════════════════════════════════ */
+let cStep=0,selCls='',pendNm='';
+const nmI=document.getElementById('heroNm');
+nmI.addEventListener('input',()=>{pendNm=nmI.value.trim().toUpperCase();document.getElementById('n1btn').disabled=pendNm.length<1});
+nmI.addEventListener('keydown',e=>{if(e.key==='Enter'&&pendNm.length>0)goStep(1)});
+
+function selClass(c){
+  selCls=c;
+  document.querySelectorAll('.cc').forEach(x=>x.classList.remove('sel'));
+  document.getElementById('ck-'+c).classList.add('sel');
+  document.getElementById('n2btn').disabled=false;
+}
+function goStep(n){
+  document.getElementById('s'+cStep).style.display='none';
+  cStep=n;
+  const el=document.getElementById('s'+n);
+  el.style.display=(n===0||n===3)?'flex':'block';
+  el.style.width='100%';
+  for(let i=0;i<4;i++){const d=document.getElementById('d'+i);if(d)d.className='pdot'+(i<n?' done':i===n?' active':'')}
+  if(n===2){tomClass=selCls||'knight';initCust();}
+  if(n===3)buildConf();
+}
+function buildConf(){
+  const c=CLS[selCls];
+  document.getElementById('confSpr').innerHTML=tomatoSVG(selCls,tomColor,tomEye,72);
+  document.getElementById('confNm').textContent=pendNm;
+  document.getElementById('confCls').textContent=c.tag+' · '+c.name;
+  document.getElementById('confCls').style.color=c.color;
+  document.getElementById('confCard').style.borderColor=c.color;
+  document.getElementById('confSts').innerHTML=`<div class="csl">❤ HP</div><div style="color:var(--hp)">${c.hp}</div><div class="csl">💧 MP</div><div style="color:var(--blue)">${c.mp}</div><div class="csl">🎁 BONUS</div><div style="color:${c.color};grid-column:2">${c.bonus}</div>`;
+}
+function beginQuest(){
+  try{
+    const c=CLS[selCls];if(!c)return;
+    save({heroName:pendNm,heroClass:selCls,hp:c.hp,hpMax:c.hp,mp:c.mp,mpMax:c.mp,tomColor,tomEye});
+    const cs=document.getElementById('creationScreen');
+    cs.style.display='';cs.classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    initApp();
+    setTimeout(()=>sfx('lv'),100);
+  }catch(e){
+    document.getElementById('creationScreen').style.display='';
+    document.getElementById('creationScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    try{initApp()}catch(e2){}
+  }
+}
+
+/* customiser */
+function initCust(){
+  const cc=document.getElementById('custColors');
+  if(!cc.children.length){
+    TOM_COLORS.forEach((col,i)=>{
+      const d=document.createElement('div');
+      d.className='cust-color';d.style.background=col.body;d.title=col.name;
+      d.onclick=()=>{tomColor=i;refreshCust()};cc.appendChild(d);
+    });
+  }
+  const ELABELS=['• •','^  ^','— —','★ ★','~ ~','> <'];
+  const ce=document.getElementById('custEyes');
+  if(!ce.children.length){
+    TOM_EYES.forEach((e,i)=>{
+      const b=document.createElement('button');
+      b.className='cust-eye';b.textContent=ELABELS[i];
+      b.onclick=()=>{tomEye=i;refreshCust()};ce.appendChild(b);
+    });
+  }
+  refreshCust();
+}
+function refreshCust(){
+  document.querySelectorAll('#custColors .cust-color').forEach((el,i)=>{el.classList.toggle('sel',i===tomColor);el.style.borderColor=i===tomColor?'var(--gold)':'transparent'});
+  document.querySelectorAll('#custEyes .cust-eye').forEach((el,i)=>el.classList.toggle('sel',i===tomEye));
+  const prev=document.getElementById('custPrev');if(prev)prev.innerHTML=tomatoSVG(tomClass,tomColor,tomEye,96);
+}
+
+/* ══════════════════════════════════════════
+   INIT APP
+══════════════════════════════════════════ */
+function initApp(){
+  tomColor=G.tomColor||0;tomEye=G.tomEye||0;tomClass=G.heroClass||'knight';
+  const c=gCls();
+  document.getElementById('hspr').innerHTML=tomatoSVG(tomClass,tomColor,tomEye,80);
+  document.getElementById('charNm').textContent=G.heroName||'HERO';
+  document.getElementById('charCl').textContent=c.name;
+  document.getElementById('charCl').style.color=c.color;
+  document.getElementById('clsBonus').textContent=c.bonus;
+  document.getElementById('clsBonus').style.color=c.color;
+  document.getElementById('heroLeg').innerHTML='🍅 You';
+  document.getElementById('fCls').textContent=c.name;
+  document.getElementById('setNm').textContent=G.heroName;
+  document.getElementById('setCls').textContent=c.name;
+  updateNotifBtn();
+  updateUI();updateBossUI();updatePips(G.pomPhase);drawTimer();renderHist();updateMapUI();
+  renderShop();renderAchievements();renderBuffBar();
+  checkAchievements();
+  if(G.musicOn){const f=()=>{startMus();document.removeEventListener('click',f)};document.addEventListener('click',f,{once:true})}
+}
+
+// Render class card tomatos
+['knight','mage','ranger','paladin'].forEach((cls,i)=>{
+  const el=document.getElementById('cc-spr-'+cls);
+  if(el)el.innerHTML=tomatoSVG(cls,i%TOM_COLORS.length,0,52);
+});
+
+if(!G.heroName){
+  document.getElementById('mainApp').classList.add('hidden');
+}else{
+  document.getElementById('creationScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  initApp();
+}
+
+/* ══════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════ */
+function openSet(){document.getElementById('setOv').classList.add('show')}
+function closeSet(){document.getElementById('setOv').classList.remove('show')}
+function doReroll(){if(!confirm('Reset character? Stats kept.'))return;save({heroName:'',heroClass:''});closeSet();location.reload()}
+function doReset(){if(!confirm('DELETE all progress? Cannot be undone.'))return;localStorage.removeItem(LK);location.reload()}
+
+/* ══════════════════════════════════════════
+   MAP
+══════════════════════════════════════════ */
+const MS=8;
+function sRng(s){let x=s;return()=>{x=(x*1664525+1013904223)&0xffffffff;return(x>>>0)/0xffffffff}}
+function genMap(s){
+  const r=sRng(s),bi=BIOMES[Math.floor(r()*BIOMES.length)],ns=[];
+  for(let i=0;i<MS-1;i++)ns.push({type:EP[Math.floor(r()*EP.length)],claimed:false});
+  ns.push({type:'boss',claimed:false});
+  if(!ns.slice(0,6).some(n=>n.type==='chest')){ns[1+Math.floor(r()*4)].type='chest'}
+  if(!ns.slice(0,6).some(n=>n.type==='lore')){ns[2+Math.floor(r()*3)].type='lore'}
+  return{bi,ns}
+}
+function getMap(){const{bi,ns}=genMap(G.mapSeed);ns.forEach((n,i)=>{if(G.mapClaimed.includes(i))n.claimed=true});return{bi,ns}}
+
+const CHEST_R=[
+  {title:'ANCIENT TOME',body:'Hidden beneath gnarled roots, a tome hums with arcane energy.',xp:80,gold:20,icon:'📦'},
+  {title:'FORGOTTEN CACHE',body:'A rusted lockbox — gold coins and a dried sprig of courage-herb.',xp:40,gold:45,icon:'🔒'},
+  {title:"HERO'S TROVE",body:'"For whoever walks this road with purpose," reads the note.',xp:100,gold:30,icon:'⚔'},
+  {title:'GLOWING ORB',body:'It pulses with strange light. XP flows through your veins like warm fire.',xp:120,gold:10,icon:'🔮'},
+];
+const BATTLE_R=[
+  {title:'AMBUSH!',body:'A Shadow Sprite leaps from the fog! You dispatch it with a precise strike.',xp:70,gold:15,icon:'⚔'},
+  {title:'ROAD BANDIT',body:'A grizzled bandit steps onto the path. One firm glare and they reconsider.',xp:50,gold:25,icon:'🗡'},
+  {title:'CURSED ARMOUR',body:'An empty suit of armour animates! You smash its visor — the curse shatters.',xp:90,gold:20,icon:'🛡'},
+  {title:'WILD SLIME',body:'A gelatinous cube blocks the road. You sidestep it elegantly.',xp:40,gold:12,icon:'🟢'},
+];
+const MERCH_R=[
+  {title:'WANDERING MERCHANT',body:'"Ah, a traveller! I have rare wares today." He winks.',xp:30,gold:35,icon:'🏪'},
+  {title:'THE ALCHEMIST',body:'"One vial of Focus Elixir, no charge. Go save the world."',xp:50,gold:20,icon:'⚗'},
+  {title:"CARTOGRAPHER'S CAMP",body:'"The journey itself is the treasure," she says.',xp:60,gold:15,icon:'🗺'},
+];
+const LORE_R=[
+  {title:'STONE INSCRIPTION',body:'"Here stood the Order of the Focused Flame. One hour of deep work moves mountains."',xp:45,gold:8,icon:'📜'},
+  {title:'CRUMBLING SHRINE',body:'A shrine to St. Pomodoro, patron of the uninterrupted.',xp:50,gold:5,icon:'🏛'},
+  {title:'OLD JOURNAL PAGE',body:'"Day 47. I stopped checking messages in the morning hours. Everything changed."',xp:55,gold:6,icon:'📖'},
+  {title:'RUNIC MONOLITH',body:'"Flow state was sacred. They called it the Groove."',xp:60,gold:4,icon:'🗿'},
+  {title:"TRAVELLER'S TREE",body:'Names carved into bark — every one who walked this road before you.',xp:40,gold:10,icon:'🌳'},
+  {title:'ECHOING WELL',body:'"Focus is not absence of noise. It is presence of purpose."',xp:65,gold:0,icon:'🪣'},
+];
+const REST_R=[
+  {title:'ROADSIDE INN',body:'"Sit, weary hero." The innkeeper slides over a bowl of stew.',xp:20,gold:5,icon:'🏠',hp:20},
+  {title:'HEALING SPRING',body:'Cool water glows faintly blue. Wounds close.',xp:15,gold:0,icon:'💧',hp:30},
+  {title:'CAMPFIRE',body:'Someone left a fire burning. You rest, watching embers drift upward.',xp:25,gold:8,icon:'🔥',hp:15},
+];
+function getEvContent(type,r){
+  const pool={chest:CHEST_R,battle:BATTLE_R,merchant:MERCH_R,lore:LORE_R,rest:REST_R};
+  if(type==='boss')return null;
+  const arr=pool[type];return arr[Math.floor(r()*arr.length)];
+}
+
+let mAnim=null,heroX=0;
+function drawMap(){
+  const canvas=document.getElementById('mapCanvas');if(!canvas)return;
+  const{bi,ns}=getMap();
+  const W=canvas.parentElement.clientWidth||800,H=190;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const sky=ctx.createLinearGradient(0,0,0,H*.6);
+  sky.addColorStop(0,bi.sky);sky.addColorStop(1,bi.gr);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=bi.gr;ctx.fillRect(0,H*.55,W,H*.45);
+  const rY=H*.62,rH=H*.25;
+  ctx.fillStyle=bi.rd;ctx.fillRect(0,rY,W,rH);
+  ctx.fillStyle=bi.ac;for(let x=0;x<W;x+=40)ctx.fillRect(x,rY+rH/2-2,24,4);
+  const rng=sRng(G.mapSeed+99);
+  for(let i=0;i<12;i++){
+    const tx=rng()*W,ty=H*.35+rng()*H*.2;
+    if(tx<30||tx>W-30)continue;
+    ctx.font=`${14+rng()*10}px serif`;ctx.globalAlpha=0.5+rng()*.5;ctx.fillText(bi.tr,tx,ty);
+  }
+  ctx.globalAlpha=1;
+  const nSp=W/(MS+1),nY=rY+rH/2;
+  ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+  ctx.beginPath();ctx.moveTo(nSp/2,nY);ctx.lineTo(W-nSp/2,nY);ctx.stroke();ctx.setLineDash([]);
+  const NE={chest:'📦',battle:'⚔',merchant:'🏪',lore:'📖',rest:'💤',boss:'👑'};
+  ns.forEach((n,i)=>{
+    const nx=nSp*(i+1),reached=i<G.mapStep,cur=i===G.mapStep;
+    ctx.beginPath();ctx.arc(nx,nY,12,0,Math.PI*2);
+    ctx.fillStyle=n.claimed?'#1a3a1a':cur?'#1a1a3a':reached?'#1a2a1a':'#0a0a1a';
+    ctx.strokeStyle=n.claimed?bi.ac:cur?'#a78bfa':reached?bi.ac:'#2a2a4a';
+    ctx.fill();ctx.lineWidth=2;ctx.stroke();
+    ctx.font='12px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.globalAlpha=n.claimed?.4:(reached||cur?1:.32);ctx.fillText(NE[n.type],nx,nY);ctx.globalAlpha=1;
+    if(cur&&!n.claimed){const p=Date.now()/600;ctx.beginPath();ctx.arc(nx,nY,14+Math.sin(p)*3,0,Math.PI*2);ctx.strokeStyle='rgba(167,139,250,0.6)';ctx.lineWidth=1.5;ctx.stroke()}
+    ctx.font='9px monospace';ctx.fillStyle=reached?'#4ade80':'#3a3a6a';ctx.textBaseline='top';ctx.fillText(i+1,nx,nY+15);
+  });
+  const tX=nSp*(Math.min(G.mapStep,MS-1)+1);
+  if(heroX===0)heroX=nSp/2;heroX+=(tX-heroX)*.12;
+  ctx.globalAlpha=.3;ctx.font='7px serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='#000';ctx.fillText('⬤',heroX,nY+13);ctx.globalAlpha=1;
+  // Draw tomato hero
+  try{
+    const svgStr=tomatoSVG(G.heroClass||'knight',G.tomColor||0,G.tomEye||0,24);
+    const b64='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svgStr)));
+    const img=new Image();
+    img.onload=()=>{try{ctx.drawImage(img,heroX-12,nY-22,24,24)}catch(e){}};
+    img.onerror=()=>{ctx.beginPath();ctx.arc(heroX,nY-10,8,0,Math.PI*2);ctx.fillStyle='#e8433a';ctx.fill();ctx.fillStyle='#4a9a30';ctx.fillRect(heroX-2,nY-20,4,6)};
+    img.src=b64;
+  }catch(e){ctx.font='16px serif';ctx.fillText('🍅',heroX,nY+2)}
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  if(mAnim)cancelAnimationFrame(mAnim);
+  mAnim=requestAnimationFrame(()=>{if(document.getElementById('tc-map').classList.contains('act'))drawMap()});
+}
+
+function updateMapUI(){
+  const{bi,ns}=getMap();
+  document.getElementById('mapBiome').textContent=bi.name;
+  document.getElementById('mpCnt').textContent=G.mapStep+' / '+MS;
+  document.getElementById('mpFill').style.width=(G.mapStep/MS*100)+'%';
+  if(G.mapStep>=MS){
+    document.getElementById('metT').textContent='🏁 ROAD COMPLETE!';
+    document.getElementById('metT').style.color='var(--green)';
+    document.getElementById('mebB').textContent='You have walked today\'s entire road. A new one awaits tomorrow.';
+    return;
+  }
+  const node=ns[G.mapStep];if(!node)return;
+  const box=document.getElementById('meb');
+  const colors={chest:'chest',battle:'battle',merchant:'merchant',lore:'lore',rest:'rest',boss:'boss'};
+  const labels={chest:'📦 TREASURE CHEST',battle:'⚔ ENCOUNTER',merchant:'🏪 MERCHANT',lore:'📖 LORE FOUND',rest:'💤 REST SITE',boss:'👑 BOSS NODE'};
+  box.className='meb '+(colors[node.type]||'');
+  const te=document.getElementById('metT');te.textContent=labels[node.type]||'';te.style.color='';
+  if(node.claimed)document.getElementById('mebB').textContent='Already claimed. Keep completing sessions!';
+  else if(G.mapStep===0&&G.todayPoms===0)document.getElementById('mebB').textContent='Complete a focus session to reach the first node!';
+  else{
+    const r=sRng(G.mapSeed+G.mapStep*7),content=getEvContent(node.type,r);
+    document.getElementById('mebB').textContent=node.type==='boss'?'The road ends here — at a mighty guardian!':content?content.body:'';
+  }
+}
+
+function advanceMap(){
+  if(G.mapStep>=MS)return;
+  const{ns}=getMap();const node=ns[G.mapStep];
+  const r=sRng(G.mapSeed+G.mapStep*7);
+  if(node.type!=='boss'&&!node.claimed){
+    const content=getEvContent(node.type,r);
+    if(content){
+      const cls=gCls();
+      const xpG=Math.round(content.xp*(cls.xpMult||1));
+      const goldG=Math.round((content.gold||0)*(cls.goldMult||1));
+      const hpG=content.hp?Math.round(content.hp*(G.heroClass==='paladin'?2:1)):0;
+      const colors={chest:'var(--gold)',battle:'var(--hp)',merchant:'var(--blue)',lore:'var(--purple)',rest:'var(--green)'};
+      document.getElementById('evIc').textContent=content.icon;
+      document.getElementById('evTi').textContent=content.title;
+      document.getElementById('evTi').style.color=colors[node.type]||'var(--text)';
+      document.getElementById('evBo').textContent=content.body;
+      let rw='+'+xpG+' XP';if(goldG>0)rw+='  +'+goldG+' 🪙';if(hpG>0)rw+='  +'+hpG+' HP';
+      document.getElementById('evRw').textContent=rw;
+      document.getElementById('evBtn').onclick=()=>{
+        gainXP(xpG);
+        if(goldG){save({gold:G.gold+goldG,totalGoldEarned:(G.totalGoldEarned||0)+goldG})}
+        if(hpG)save({hp:Math.min(G.hpMax,G.hp+hpG)});
+        sfx('chest');
+        save({mapClaimed:[...G.mapClaimed,G.mapStep],mapStep:G.mapStep+1});
+        closeEv();updateUI();updateMapUI();drawMap();renderShop();
+        checkAchievements();
+      };
+      document.getElementById('evOv').classList.add('show');
+    }else{save({mapClaimed:[...G.mapClaimed,G.mapStep],mapStep:G.mapStep+1})}
+  }else save({mapStep:G.mapStep+1});
+  updateMapUI();drawMap();
+}
+function closeEv(){document.getElementById('evOv').classList.remove('show')}
+
+/* ══════════════════════════════════════════
+   TABS
+══════════════════════════════════════════ */
+function swTab(t){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('act'));
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('act'));
+  // Map tab name → button class suffix
+  const clsMap={quest:'tq',map:'tm',shop:'tsh',ach:'tac'};
+  const btn=document.querySelector('.tbtn.'+(clsMap[t]||'tq'));
+  if(btn)btn.classList.add('act');
+  const tc=document.getElementById('tc-'+t);
+  if(tc)tc.classList.add('act');
+  if(t==='map')setTimeout(()=>{drawMap();updateMapUI()},50);
+  if(t==='shop')renderShop();
+  if(t==='ach')renderAchievements();
+}
+
+/* ══════════════════════════════════════════
+   TIMER
+══════════════════════════════════════════ */
+function setMode(mode,mins,v){
+  resetTimer();T.mode=mode;T.tot=mins*60;T.rem=mins*60;
+  const hot=v==='h';
+  document.getElementById('tDisp').className='tdisp'+(hot?'':' brk');
+  const ring=document.getElementById('ringC');
+  ring.style.stroke=hot?'var(--tomato2)':'var(--green)';
+  ring.style.filter=hot?'drop-shadow(0 0 6px var(--tomato2))':'drop-shadow(0 0 6px var(--green))';
+  document.querySelectorAll('.mtab').forEach((t,i)=>t.classList.toggle('act',i===['focus','short','long'].indexOf(mode)));
+  drawTimer();
+}
+function toggleTimer(){T.run?pauseT():startT()}
+function startT(){
+  if(T.rem<=0)return;
+  sfx('start');T.run=true;
+  document.getElementById('startB').textContent='⏸ PAUSE';
+  T.iv=setInterval(tick,1000);
+}
+function pauseT(){T.run=false;document.getElementById('startB').textContent='▶ START';clearInterval(T.iv)}
+function resetTimer(){pauseT();T.rem=T.tot;drawTimer()}
+function skipSes(){clearInterval(T.iv);T.run=false;T.rem=0;onDone()}
+function tick(){T.rem--;drawTimer();if(T.rem<=0){clearInterval(T.iv);T.run=false;onDone()}}
+function drawTimer(){
+  const m=Math.floor(T.rem/60),s=T.rem%60;
+  document.getElementById('tDisp').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const circ=2*Math.PI*74;
+  document.getElementById('ringC').style.strokeDashoffset=circ*(T.rem/T.tot);
+}
+function onDone(){
+  document.getElementById('startB').textContent='▶ START';
+  if(T.mode!=='focus')return;
+  sfx('done');
+  // Browser notification
+  sendNotif('🍅 Session Complete!','Time for a break, hero. You earned it.');
+  // Also play alarm sound
+  sfx('alarm');
+
+  const cls=gCls();
+  let xpGain=55+Math.floor(Math.random()*55);
+  let goldGain=8+Math.floor(Math.random()*18);
+  // Apply buffs
+  if(hasBuff('xp2x')){xpGain*=2;consumeBuff('xp2x');showBanner('⚗ XP doubled!','')}
+  if(hasBuff('gold2x')){goldGain*=2;consumeBuff('gold2x');showBanner('🍀 Gold doubled!','')}
+  xpGain=Math.round(xpGain*cls.xpMult);
+  goldGain=Math.round(goldGain*cls.goldMult);
+  const mins=Math.round(T.tot/60);
+  const task=document.getElementById('taskI').value.trim()||'Focused work';
+  const phase=(G.pomPhase+1)%4;
+  save({
+    pomPhase:phase,totalPoms:G.totalPoms+1,todayPoms:G.todayPoms+1,
+    totalMins:G.totalMins+mins,gold:G.gold+goldGain,
+    totalGoldEarned:(G.totalGoldEarned||0)+goldGain,
+  });
+  addHist(task,xpGain);
+  gainXP(xpGain);
+  hitBoss();
+  updatePips(phase);
+  advanceMap();
+  checkAchievements();
+}
+
+/* ══════════════════════════════════════════
+   XP / LEVEL
+══════════════════════════════════════════ */
+function gainXP(amount){
+  showPop('+'+amount+' XP');
+  let xp=G.xp+amount,lv=G.level,xm=G.xpMax;
+  while(xp>=xm){xp-=xm;lv++;xm=Math.floor(xm*1.5);const l=lv;setTimeout(()=>{sfx('lv');showLU(l)},500)}
+  save({xp,level:lv,xpMax:xm});updateUI();
+}
+function showLU(lv){
+  const sk=gCls().skills;
+  document.getElementById('luN').textContent=lv;
+  document.getElementById('luSk').textContent=sk[(lv-2)%sk.length]||'TRANSCENDENCE';
+  document.getElementById('luOv').classList.add('show');
+}
+function closeLU(){document.getElementById('luOv').classList.remove('show')}
+
+/* ══════════════════════════════════════════
+   BOSS
+══════════════════════════════════════════ */
+function hitBoss(){
+  const cls=gCls();
+  let d=Math.floor((180+Math.floor(Math.random()*280))*cls.bossMult);
+  if(hasBuff('dmg3x')){d*=3;consumeBuff('dmg3x');showBanner('🔥 Triple damage!','')}
+  sfx('hit');
+  const hp=Math.max(0,G.bossHp-d);
+  document.getElementById('rdmg').innerHTML='Last hit: <span>'+d+' dmg</span>';
+  document.getElementById('bossP').classList.add('boss-hit');
+  setTimeout(()=>document.getElementById('bossP').classList.remove('boss-hit'),420);
+  if(hp<=0){
+    const ni=(G.bossIdx+1)%BOSSES.length,nb=BOSSES[ni];
+    save({bossesSlain:G.bossesSlain+1,bossIdx:ni,bossHp:nb.hp,bossHpMax:nb.hp});
+    gainXP(150);showPop('🏆 BOSS SLAIN! +150 XP');
+    sendNotif('🏆 Boss Defeated!',`You slew the ${BOSSES[G.bossIdx].n}! A new challenger approaches.`);
+  }else save({bossHp:hp});
+  updateBossUI();
+}
+function updateBossUI(){
+  const b=BOSSES[G.bossIdx];
+  document.getElementById('bEmoji').textContent=b.e;
+  document.getElementById('bName').textContent=b.n;
+  document.getElementById('bHpV').textContent=G.bossHp.toLocaleString();
+  document.getElementById('bHpM').textContent=G.bossHpMax.toLocaleString();
+  document.getElementById('bHpB').style.width=(G.bossHp/G.bossHpMax*100)+'%';
+}
+
+/* ══════════════════════════════════════════
+   HISTORY + UI
+══════════════════════════════════════════ */
+function addHist(task,xp){
+  const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const history=[{task,xp,time},...G.history].slice(0,25);
+  save({history});renderHist();
+}
+function renderHist(){
+  const el=document.getElementById('hList');
+  if(!G.history.length){el.innerHTML='<div style="color:var(--text2);font-size:.8rem;padding:5px">No sessions yet!</div>';return}
+  el.innerHTML=G.history.map(h=>`<div class="hi"><span class="ht">${h.time}</span><span class="hk">${h.task}</span><span class="hx">+${h.xp}XP</span></div>`).join('');
+}
+function updatePips(p){document.querySelectorAll('.pip').forEach((x,i)=>x.classList.toggle('done',i<p))}
+function showPop(txt){
+  const el=document.createElement('div');el.className='xpp';el.textContent=txt;
+  el.style.left=(Math.random()*40+28)+'%';el.style.top='38%';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1600);
+}
+function updateUI(){
+  const c=gCls();
+  document.getElementById('charLv').textContent=G.level;
+  document.getElementById('xpV').textContent=G.xp+'/'+G.xpMax;document.getElementById('xpB').style.width=(G.xp/G.xpMax*100)+'%';
+  document.getElementById('hpV').textContent=G.hp+'/'+G.hpMax;document.getElementById('hpB').style.width=(G.hp/G.hpMax*100)+'%';
+  document.getElementById('mpV').textContent=G.mp+'/'+G.mpMax;document.getElementById('mpB').style.width=(G.mp/G.mpMax*100)+'%';
+  document.getElementById('goldD').textContent=G.gold.toLocaleString();
+  document.getElementById('strD').textContent=G.streak;document.getElementById('dayB').textContent='DAY '+getDN();
+  document.getElementById('qDesc').textContent=QUESTS[G.bossesSlain%QUESTS.length];
+  document.getElementById('sP').textContent=G.totalPoms;document.getElementById('sM').textContent=G.totalMins+' min';
+  document.getElementById('sB').textContent=G.bossesSlain;
+  document.getElementById('sA').textContent=(G.achievements||[]).length;
+  document.getElementById('sGs').textContent=(G.goldSpent||0).toLocaleString();
+  document.getElementById('sR').textContent=G.roadsCompleted||0;
+  document.getElementById('fP').textContent=G.todayPoms;document.getElementById('fS').textContent=G.streak;document.getElementById('fL').textContent=G.level;
+  // Update shop gold display if visible
+  const sg=document.getElementById('shopGold');if(sg)sg.textContent=G.gold.toLocaleString();
+}
+window.addEventListener('resize',()=>{if(document.getElementById('tc-map').classList.contains('act'))drawMap()});
+</script>
+</body>
+</html>
