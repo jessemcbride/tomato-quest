@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TomatoQuest app icon">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#a9db72"/>
+      <stop offset="100%" stop-color="#6eb047"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#f5ffbd" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#f5ffbd" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tomato" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff725f"/>
+      <stop offset="100%" stop-color="#c01616"/>
+    </linearGradient>
+    <linearGradient id="cape" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#2f8b34"/>
+      <stop offset="100%" stop-color="#11591d"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bg)"/>
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#sun)"/>
+
+  <!-- sword -->
+  <g transform="translate(120 248) rotate(-22)">
+    <rect x="-8" y="-136" width="16" height="146" rx="4" fill="#e7e7e5" stroke="#999" stroke-width="4"/>
+    <rect x="-26" y="-2" width="52" height="14" rx="6" fill="#d49a2c" stroke="#9f6c12" stroke-width="4"/>
+    <rect x="-8" y="12" width="16" height="22" rx="4" fill="#c88620"/>
+  </g>
+
+  <!-- cape -->
+  <path d="M116 355c34 35 84 51 140 49 58-2 113-21 154-56-20 63-78 104-155 104-58 0-111-21-139-97z" fill="url(#cape)"/>
+
+  <!-- tomato body -->
+  <circle cx="256" cy="285" r="132" fill="url(#tomato)" stroke="#8f0d0d" stroke-width="8"/>
+
+  <!-- leaves -->
+  <g transform="translate(256 162)">
+    <ellipse rx="60" ry="20" transform="rotate(-20) translate(-40,20)" fill="#3b8d2f"/>
+    <ellipse rx="60" ry="20" transform="rotate(20) translate(40,20)" fill="#3b8d2f"/>
+    <ellipse rx="52" ry="18" transform="rotate(160) translate(0,-16)" fill="#2e7f26"/>
+    <path d="M0 8c-7-33 15-54 35-58-12 17-18 31-13 58z" fill="#2c7a24"/>
+  </g>
+
+  <!-- face -->
+  <ellipse cx="214" cy="280" rx="20" ry="26" fill="#231a1a"/>
+  <ellipse cx="299" cy="280" rx="20" ry="26" fill="#231a1a"/>
+  <circle cx="221" cy="270" r="6" fill="#fff"/>
+  <circle cx="306" cy="270" r="6" fill="#fff"/>
+  <path d="M230 321c17 16 39 16 56 0" fill="none" stroke="#311c1c" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- shield -->
+  <g transform="translate(364 323)">
+    <path d="M0-66 64-41v57c0 33-27 64-64 77C-37 80-64 49-64 16v-57z" fill="#d1982b" stroke="#8f5f16" stroke-width="6"/>
+    <path d="M0-53 48-35v48c0 24-20 47-48 58-28-11-48-34-48-58v-48z" fill="#4d9a41"/>
+    <path d="M-24 10 0 34 30-10" fill="none" stroke="#bde672" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- belt -->
+  <path d="M130 323c39 21 82 32 126 32 46 0 89-11 127-32l9 25c-42 23-88 35-136 35-47 0-94-12-136-35z" fill="#2f8b34"/>
+  <circle cx="256" cy="349" r="19" fill="#e0aa3a" stroke="#9f6c12" stroke-width="5"/>
+
+  <ellipse cx="256" cy="453" rx="170" ry="22" fill="#234f1d" opacity="0.35"/>
+</svg>
