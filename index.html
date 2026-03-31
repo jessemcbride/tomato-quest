@@ -127,6 +127,7 @@ header{display:flex;align-items:center;justify-content:space-between;border:3px 
 .hbtn .badge{position:absolute;top:-6px;right:-6px;background:var(--tomato);color:white;font-size:.25rem;padding:1px 4px;border-radius:0;min-width:14px;text-align:center}
 /* hero panel */
 .hero-panel{display:grid;grid-template-columns:206px 1fr;gap:11px}
+#charAnchor{display:contents}
 .char-card{border:3px solid var(--purple);background:var(--panel);padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 0 20px rgba(167,139,250,.2)}
 .hero-spr{width:80px;height:80px;animation:hero-float 3s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
 .char-nm{font-family:'Press Start 2P',monospace;font-size:.38rem;color:var(--gold);text-align:center;word-break:break-all}
@@ -147,6 +148,8 @@ header{display:flex;align-items:center;justify-content:space-between;border:3px 
 .tbtn.act{background:var(--panel);color:var(--text)}
 .tbtn.act.tq{color:var(--gold)}.tbtn.act.tm{color:var(--green)}
 .tbtn.act.tsh{color:var(--blue)}.tbtn.act.tac{color:var(--purple)}
+.tbtn.act.tch{color:var(--tomato2)}
+.tbtn.tch{display:none}
 .tc{display:none;flex-direction:column;gap:11px;border:2px solid var(--border);border-top:none;padding:12px;background:var(--panel)}
 .tc.act{display:flex}
 /* quest tab */
@@ -275,9 +278,11 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
 .notif-banner.warn{border-color:var(--gold);color:var(--gold);box-shadow:0 0 20px rgba(245,200,66,.4)}
 .notif-banner.ach{border-color:var(--purple);color:var(--purple);box-shadow:0 0 20px rgba(167,139,250,.4)}
 @media(max-width:640px){
+  #charAnchor{display:none}
   .hero-panel{grid-template-columns:1fr}.bg2{grid-template-columns:1fr}
   .tdisp{font-size:2rem}.class-grid{grid-template-columns:1fr 1fr}
   .shop-grid{grid-template-columns:1fr}
+  .tbtn.tch{display:block}
 }
 </style>
 </head>
@@ -448,7 +453,8 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
   </header>
 
   <div class="hero-panel">
-    <div class="char-card">
+    <div id="charAnchor">
+    <div class="char-card" id="charCard">
       <div class="hero-spr" id="hspr"></div>
       <div class="char-nm" id="charNm">HERO</div>
       <div class="char-cl" id="charCl">⚔ Knight</div>
@@ -460,13 +466,19 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
       <div class="cls-bonus" id="clsBonus"></div>
       <div class="buff-bar" id="buffBar"></div>
     </div>
+    </div>
 
     <div class="main-area">
       <div class="tab-bar">
+        <button class="tbtn tch" onclick="swTab('char')">👤 HERO</button>
         <button class="tbtn tq act" onclick="swTab('quest')">📜 QUEST</button>
         <button class="tbtn tm" onclick="swTab('map')">🗺 MAP</button>
         <button class="tbtn tsh" onclick="swTab('shop')">🛒 SHOP</button>
         <button class="tbtn tac" onclick="swTab('ach')">🏆 FEATS</button>
+      </div>
+
+      <div class="tc" id="tc-char">
+        <div id="charMobileSlot"></div>
       </div>
 
       <!-- QUEST TAB -->
@@ -1217,17 +1229,29 @@ function closeEv(){document.getElementById('evOv').classList.remove('show')}
    TABS
 ══════════════════════════════════════════ */
 function swTab(t){
+  syncCharacterPanel();
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('act'));
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('act'));
   // Map tab name → button class suffix
-  const clsMap={quest:'tq',map:'tm',shop:'tsh',ach:'tac'};
+  const clsMap={char:'tch',quest:'tq',map:'tm',shop:'tsh',ach:'tac'};
   const btn=document.querySelector('.tbtn.'+(clsMap[t]||'tq'));
   if(btn)btn.classList.add('act');
   const tc=document.getElementById('tc-'+t);
   if(tc)tc.classList.add('act');
+  if(t==='char')updateUI();
   if(t==='map')setTimeout(()=>{drawMap();updateMapUI()},50);
   if(t==='shop')renderShop();
   if(t==='ach')renderAchievements();
+}
+
+function syncCharacterPanel(){
+  const isMobile=window.matchMedia('(max-width:640px)').matches;
+  const card=document.getElementById('charCard');
+  const mobileSlot=document.getElementById('charMobileSlot');
+  const anchor=document.getElementById('charAnchor');
+  if(!card||!mobileSlot||!anchor)return;
+  if(isMobile&&card.parentElement!==mobileSlot)mobileSlot.appendChild(card);
+  if(!isMobile&&card.parentElement!==anchor)anchor.appendChild(card);
 }
 
 /* ══════════════════════════════════════════
@@ -1376,7 +1400,11 @@ function updateUI(){
   // Update shop gold display if visible
   const sg=document.getElementById('shopGold');if(sg)sg.textContent=G.gold.toLocaleString();
 }
-window.addEventListener('resize',()=>{if(document.getElementById('tc-map').classList.contains('act'))drawMap()});
+window.addEventListener('resize',()=>{
+  syncCharacterPanel();
+  if(document.getElementById('tc-map').classList.contains('act'))drawMap()
+});
+syncCharacterPanel();
 </script>
 </body>
 </html>
