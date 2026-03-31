@@ -128,6 +128,19 @@ header{display:flex;align-items:center;justify-content:space-between;border:3px 
 .hbtn{font-family:'Press Start 2P',monospace;font-size:.3rem;background:var(--panel2);border:2px solid var(--border);color:var(--text2);padding:5px 8px;cursor:pointer;transition:border-color .15s,color .15s;position:relative}
 .hbtn:hover{border-color:var(--border2);color:var(--text)}.hbtn.on{border-color:var(--green);color:var(--green)}
 .hbtn .badge{position:absolute;top:-6px;right:-6px;background:var(--tomato);color:white;font-size:.25rem;padding:1px 4px;border-radius:0;min-width:14px;text-align:center}
+.hud-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.hud-chip{border:2px solid var(--border);background:var(--panel);padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-height:56px}
+.hud-chip-lbl{font-family:'Press Start 2P',monospace;font-size:.28rem;color:var(--text2)}
+.hud-chip-val{font-family:'Press Start 2P',monospace;font-size:.48rem;color:var(--text);line-height:1.2}
+.hud-chip-sub{font-size:.72rem;color:var(--text2)}
+.hud-chip.gold{border-color:rgba(245,200,66,.55);box-shadow:0 0 12px rgba(245,200,66,.12)}
+.hud-chip.gold .hud-chip-val{color:var(--gold)}
+.hud-chip.xp{border-color:rgba(245,158,11,.55)}
+.hud-chip.xp .hud-chip-val{color:var(--xp)}
+.hud-chip.hp{border-color:rgba(239,68,68,.55)}
+.hud-chip.hp .hud-chip-val{color:var(--hp)}
+.hud-chip.mp{border-color:rgba(96,165,250,.55)}
+.hud-chip.mp .hud-chip-val{color:var(--blue)}
 /* hero panel */
 .hero-panel{display:grid;grid-template-columns:206px 1fr;gap:11px}
 #charAnchor{display:contents}
@@ -284,6 +297,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
   #creationScreen{justify-content:flex-start;padding-top:56px}
   #charAnchor{display:none}
   .hero-panel{grid-template-columns:1fr}.bg2{grid-template-columns:1fr}
+  .hud-strip{grid-template-columns:1fr 1fr}
   .tdisp{font-size:2rem}.class-grid{grid-template-columns:1fr 1fr}
   .shop-grid{grid-template-columns:1fr}
   .tbtn.tch{display:block}
@@ -459,6 +473,28 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
       <div style="font-family:'Press Start 2P',monospace;font-size:.36rem;color:var(--text2)">🔥<span style="color:var(--gold)" id="strD">0</span></div>
     </div>
   </header>
+  <div class="hud-strip">
+    <div class="hud-chip gold">
+      <div class="hud-chip-lbl">🪙 GOLD</div>
+      <div class="hud-chip-val" id="hudGold">0</div>
+      <div class="hud-chip-sub">Earned: <span id="hudGoldEarned">0</span></div>
+    </div>
+    <div class="hud-chip xp">
+      <div class="hud-chip-lbl">✨ XP PROGRESS</div>
+      <div class="hud-chip-val" id="hudXpPct">0%</div>
+      <div class="hud-chip-sub"><span id="hudXpLeft">200</span> XP to level</div>
+    </div>
+    <div class="hud-chip hp">
+      <div class="hud-chip-lbl">❤ HP STATUS</div>
+      <div class="hud-chip-val" id="hudHpPct">100%</div>
+      <div class="hud-chip-sub"><span id="hudHpRaw">100 / 100</span></div>
+    </div>
+    <div class="hud-chip mp">
+      <div class="hud-chip-lbl">💧 MP STATUS</div>
+      <div class="hud-chip-val" id="hudMpPct">63%</div>
+      <div class="hud-chip-sub"><span id="hudMpRaw">50 / 80</span></div>
+    </div>
+  </div>
 
   <div class="hero-panel">
     <div id="charAnchor">
@@ -1392,11 +1428,22 @@ function showPop(txt){
 }
 function updateUI(){
   const c=gCls();
+  const xpPct=Math.floor((G.xp/G.xpMax)*100);
+  const hpPct=Math.floor((G.hp/G.hpMax)*100);
+  const mpPct=Math.floor((G.mp/G.mpMax)*100);
   document.getElementById('charLv').textContent=G.level;
   document.getElementById('xpV').textContent=G.xp+'/'+G.xpMax;document.getElementById('xpB').style.width=(G.xp/G.xpMax*100)+'%';
   document.getElementById('hpV').textContent=G.hp+'/'+G.hpMax;document.getElementById('hpB').style.width=(G.hp/G.hpMax*100)+'%';
   document.getElementById('mpV').textContent=G.mp+'/'+G.mpMax;document.getElementById('mpB').style.width=(G.mp/G.mpMax*100)+'%';
   document.getElementById('goldD').textContent=G.gold.toLocaleString();
+  document.getElementById('hudGold').textContent=G.gold.toLocaleString();
+  document.getElementById('hudGoldEarned').textContent=(G.totalGoldEarned||0).toLocaleString();
+  document.getElementById('hudXpPct').textContent=xpPct+'%';
+  document.getElementById('hudXpLeft').textContent=Math.max(0,G.xpMax-G.xp).toLocaleString();
+  document.getElementById('hudHpPct').textContent=hpPct+'%';
+  document.getElementById('hudHpRaw').textContent=G.hp+' / '+G.hpMax;
+  document.getElementById('hudMpPct').textContent=mpPct+'%';
+  document.getElementById('hudMpRaw').textContent=G.mp+' / '+G.mpMax;
   document.getElementById('strD').textContent=G.streak;document.getElementById('dayB').textContent='DAY '+getDN();
   document.getElementById('qDesc').textContent=QUESTS[G.bossesSlain%QUESTS.length];
   document.getElementById('sP').textContent=G.totalPoms;document.getElementById('sM').textContent=G.totalMins+' min';
