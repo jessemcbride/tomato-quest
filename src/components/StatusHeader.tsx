@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, ScrollView } from 'react-native';
+import { getRelicImage } from '../assets/relicImages';
 
 interface Props {
   hp: number;
@@ -9,6 +10,7 @@ interface Props {
   energy?: number;
   maxEnergy?: number;
   phase: string;
+  relics?: string[];
 }
 
 function renderHpBar(hp: number, maxHp: number, width: number = 12): string {
@@ -26,7 +28,7 @@ function getHpColor(hp: number, maxHp: number): string {
 
 const MONO_FONT = Platform.select({ ios: 'Courier New', android: 'monospace', default: 'monospace' });
 
-export const StatusHeader: React.FC<Props> = ({ hp, maxHp, gold, floor, energy, maxEnergy, phase }) => {
+export const StatusHeader: React.FC<Props> = ({ hp, maxHp, gold, floor, energy, maxEnergy, phase, relics = [] }) => {
   const hpColor = getHpColor(hp, maxHp);
   const hpBar = renderHpBar(hp, maxHp);
 
@@ -50,6 +52,16 @@ export const StatusHeader: React.FC<Props> = ({ hp, maxHp, gold, floor, energy, 
           ))}
           <Text style={styles.energyText}> {energy}/{maxEnergy}</Text>
         </View>
+      )}
+      {relics.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.relicRow}>
+          {relics.map((relicId) => {
+            const img = getRelicImage(relicId);
+            return img ? (
+              <Image key={relicId} source={img} style={styles.relicIcon} resizeMode="contain" />
+            ) : null;
+          })}
+        </ScrollView>
       )}
     </View>
   );
@@ -115,5 +127,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#ffc107',
     marginLeft: 2,
+  },
+  relicRow: {
+    marginTop: 4,
+  },
+  relicIcon: {
+    width: 28,
+    height: 28,
+    marginRight: 4,
+    borderRadius: 4,
   },
 });

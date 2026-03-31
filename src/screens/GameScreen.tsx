@@ -7,6 +7,7 @@ import { TimerDisplay } from '../components/TimerDisplay';
 import { TerminalLog } from '../components/TerminalLog';
 import { CardHand } from '../components/CardHand';
 import { QuickActions } from '../components/QuickActions';
+import { EnemyPanel } from '../components/EnemyPanel';
 
 type RootStackParamList = {
   Title: undefined;
@@ -24,7 +25,7 @@ export const GameScreen: React.FC<Props> = ({ navigation }) => {
     hp, maxHp, gold, floor,
     phase, combat, map,
     currentEvent, shopItems, rewardCards,
-    log, timerState,
+    log, timerState, relics,
     handleCommand, resetRun,
   } = useGameStore();
 
@@ -58,11 +59,17 @@ export const GameScreen: React.FC<Props> = ({ navigation }) => {
             phase={phase}
             energy={combat?.energy}
             maxEnergy={combat?.maxEnergy}
+            relics={relics}
           />
         </View>
 
         {/* Timer */}
         <TimerDisplay timerState={timerState} />
+
+        {/* Enemy sprite panel - combat only */}
+        {showCardHand && combat && (
+          <EnemyPanel combat={combat} />
+        )}
 
         {/* Terminal log - main content area */}
         <TerminalLog lines={log} />

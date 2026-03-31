@@ -5,10 +5,12 @@ import {
   Text,
   StyleSheet,
   View,
+  Image,
   Platform,
 } from 'react-native';
 import { CombatState } from '../game/Combat';
 import { Card, getCardBaseId, CardContext } from '../game/Cards';
+import { getCardImage } from '../assets/cardImages';
 
 interface Props {
   combat: CombatState;
@@ -82,6 +84,8 @@ export const CardHand: React.FC<Props> = ({ combat, playerHp, playerMaxHp, onPla
           const typeColor = getTypeColor(card.type);
           const effectStr = getEffectSummary(card, combat, playerHp, playerMaxHp);
 
+          const cardImg = getCardImage(getCardBaseId(card));
+
           return (
             <TouchableOpacity
               key={card.id}
@@ -96,6 +100,9 @@ export const CardHand: React.FC<Props> = ({ combat, playerHp, playerMaxHp, onPla
               <View style={[styles.costBadge, { backgroundColor: canAfford ? typeColor : '#333' }]}>
                 <Text style={styles.costText}>{cost}</Text>
               </View>
+              {cardImg && (
+                <Image source={cardImg} style={styles.cardArt} resizeMode="cover" />
+              )}
               <Text style={[styles.cardName, !canAfford && styles.disabledText]} numberOfLines={2}>
                 {card.name}
               </Text>
@@ -136,9 +143,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     gap: 6,
   },
+  cardArt: {
+    width: 68,
+    height: 52,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
   card: {
     width: 80,
-    minHeight: 90,
+    minHeight: 110,
     backgroundColor: '#0d1117',
     borderWidth: 1.5,
     borderRadius: 6,

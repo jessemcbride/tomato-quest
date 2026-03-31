@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Card, getStartingDeck, getCardRewards, createCard, getUpgradedId, getCardBaseId } from '../game/Cards';
 import { CombatState, startCombat, playCard, endPlayerTurn, enemyTurn, startPlayerTurn, renderCombatState } from '../game/Combat';
-import { DungeonMap, generateFloor, getAvailableNodes, moveToNode, renderMap, getPathChoices, MapNode } from '../game/Map';
+import { DungeonMap, generateFloor, moveToNode, renderMap, getPathChoices, MapNode } from '../game/Map';
 import { EventDefinition, getRandomEvent, resolveEventChoice, renderEvent } from '../game/Events';
 import { getRandomRelic, getRelicDef } from '../game/Relics';
 import { PomodoroTimer, TimerState, TimerPhase } from '../game/Timer';
@@ -32,7 +32,6 @@ export type GamePhase =
   | 'victory';
 
 export interface GameState {
-  // Player
   hp: number;
   maxHp: number;
   gold: number;
@@ -40,33 +39,21 @@ export interface GameState {
   relics: string[];
   floor: number;
   bonusEnergyNextCombat: number;
-
-  // Game phase
   phase: GamePhase;
-
-  // Sub-states
   map: DungeonMap | null;
   combat: CombatState | null;
   currentEvent: EventDefinition | null;
   shopItems: ShopItem[];
   rewardCards: Card[];
   timerExpiredThisFloor: boolean;
-
-  // Timer
   timerState: TimerState;
   timer: PomodoroTimer;
-
-  // Log
   log: string[];
-
-  // Public actions
   handleCommand: (cmd: string) => void;
   addLog: (lines: string[]) => void;
   startRun: () => void;
   resetRun: () => void;
   skipBreak: () => void;
-
-  // Internal store methods (not exported but needed for typing get())
   setTimerState: (ts: TimerState) => void;
   handleTimerPhaseEnd: (phase: TimerPhase, count: number) => void;
   getStatusLines: () => string[];
@@ -81,13 +68,6 @@ export interface GameState {
 
 const MAX_LOG_LINES = 200;
 
-function createInitialTimer(): PomodoroTimer {
-  return new PomodoroTimer(
-    (state: TimerState) => { useGameStore.getState().setTimerState(state); },
-    (phase: TimerPhase, count: number) => { useGameStore.getState().handleTimerPhaseEnd(phase, count); }
-  );
-}
-
 const initialTimerState: TimerState = {
   phase: 'idle',
   remaining: 0,
@@ -98,8 +78,6 @@ const initialTimerState: TimerState = {
 
 function generateShopItems(floor: number, existingRelics: string[]): ShopItem[] {
   const items: ShopItem[] = [];
-
-  // 3 cards
   const cardRewards = getCardRewards(floor);
   for (const card of cardRewards) {
     items.push({
@@ -111,8 +89,6 @@ function generateShopItems(floor: number, existingRelics: string[]): ShopItem[] 
       cardInstance: card,
     });
   }
-
-  // 1 relic
   const relicId = getRandomRelic(existingRelics);
   const relicDef = getRelicDef(relicId);
   if (relicDef) {
@@ -124,21 +100,23 @@ function generateShopItems(floor: number, existingRelics: string[]): ShopItem[] 
       cost: 100 + Math.floor(Math.random() * 50),
     });
   }
-
-  // Heal option
-  items.push({
-    id: 'shop_heal',
-    type: 'heal',
-    name: 'Rest & Recover',
-    description: 'Heal 20 HP',
-    cost: 40,
-  });
-
+  items.push({ id: 'shop_heal', type: 'heal', name: 'Rest & Recover', description: 'Heal 20 HP', cost: 40 });
   return items;
 }
 
+// Lazy timer init so we can reference useGameStore
+let _timer: PomodoroTimer | null = null;
+function getTimer(): PomodoroTimer {
+  if (!_timer) {
+    _timer = new PomodoroTimer(
+      (state: TimerState) => { useGameStore.getState().setTimerState(state); },
+      (phase: TimerPhase, count: number) => { useGameStore.getState().handleTimerPhaseEnd(phase, count); }
+    );
+  }
+  return _timer;
+}
+
 export const useGameStore = create<GameState>()((set, get) => ({
-  // Player
   hp: 80,
   maxHp: 80,
   gold: 0,
@@ -146,67 +124,38 @@ export const useGameStore = create<GameState>()((set, get) => ({
   relics: [],
   floor: 1,
   bonusEnergyNextCombat: 0,
-
-  // Phase
   phase: 'title' as GamePhase,
-
-  // Sub-states
   map: null,
   combat: null,
   currentEvent: null,
   shopItems: [],
   rewardCards: [],
   timerExpiredThisFloor: false,
-
-  // Timer
   timerState: initialTimerState,
-  timer: createInitialTimer(),
-
-  // Log
+  timer: getTimer(),
   log: [],
 
-  setTimerState: (ts: TimerState) => {
-    set({ timerState: ts });
-  },
+  setTimerState: (ts: TimerState) => { set({ timerState: ts }); },
 
   handleTimerPhaseEnd: (phase: TimerPhase, _count: number) => {
     const state = get();
     if (phase === 'work') {
-      // Work phase ended - start break
-      const isLong = state.timerState.pomodoroCount % 4 === 0 && state.timerState.pomodoroCount > 0;
+      const isLong = (state.timerState.pomodoroCount % 4 === 0) && state.timerState.pomodoroCount > 0;
       const breakDuration = isLong ? '15 minutes' : '5 minutes';
       if (state.phase === 'combat' || state.phase === 'navigating') {
-        // Timer expired during active play - spawn procrastination demon next boss
         set({ timerExpiredThisFloor: true });
-        get().addLog([
-          '⚠️  FOCUS SESSION COMPLETE! ⚠️',
-          `Time for a ${breakDuration} break.`,
-          'The Procrastination Demon stirs...',
-        ]);
+        get().addLog(['⚠️  FOCUS SESSION COMPLETE! ⚠️', `Time for a ${breakDuration} break.`, 'The Procrastination Demon stirs...']);
       } else {
-        get().addLog([
-          '⏰ Focus session complete!',
-          `Take a ${breakDuration} break.`,
-        ]);
+        get().addLog(['⏰ Focus session complete!', `Take a ${breakDuration} break.`]);
       }
       state.timer.startBreak(isLong);
       set({ phase: 'break_idle' });
     } else if (phase === 'break' || phase === 'longbreak') {
-      // Break ended - start new work session, new floor
-      get().addLog([
-        '🍅 Break over! Back to work!',
-        'Starting new focus session...',
-        'A new dungeon floor awaits!',
-      ]);
+      get().addLog(['🍅 Break over! Back to work!', 'Starting new focus session...', 'A new dungeon floor awaits!']);
       const newFloor = state.floor + 1;
       const newMap = generateFloor(newFloor);
       state.timer.startNextWork();
-      set({
-        phase: 'navigating',
-        floor: newFloor,
-        map: newMap,
-        timerExpiredThisFloor: false,
-      });
+      set({ phase: 'navigating', floor: newFloor, map: newMap, timerExpiredThisFloor: false });
       get().addLog([`=== FLOOR ${newFloor} ===`]);
       get().addLog(renderMap(newMap));
     }
@@ -224,28 +173,13 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const deck = getStartingDeck();
     const floor = 1;
     const map = generateFloor(floor);
-
     state.timer.reset();
     state.timer.start();
-
     set({
-      hp: 80,
-      maxHp: 80,
-      gold: 0,
-      deck,
-      relics: [],
-      floor,
-      bonusEnergyNextCombat: 0,
-      phase: 'navigating',
-      map,
-      combat: null,
-      currentEvent: null,
-      shopItems: [],
-      rewardCards: [],
-      timerExpiredThisFloor: false,
-      log: [],
+      hp: 80, maxHp: 80, gold: 0, deck, relics: [], floor, bonusEnergyNextCombat: 0,
+      phase: 'navigating', map, combat: null, currentEvent: null,
+      shopItems: [], rewardCards: [], timerExpiredThisFloor: false, log: [],
     });
-
     get().addLog([
       '╔══════════════════════════════════════════╗',
       '║         TOMATO QUEST BEGINS!             ║',
@@ -265,21 +199,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const state = get();
     state.timer.reset();
     set({
-      hp: 80,
-      maxHp: 80,
-      gold: 0,
-      deck: [],
-      relics: [],
-      floor: 1,
-      bonusEnergyNextCombat: 0,
-      phase: 'title',
-      map: null,
-      combat: null,
-      currentEvent: null,
-      shopItems: [],
-      rewardCards: [],
-      timerExpiredThisFloor: false,
-      log: [],
+      hp: 80, maxHp: 80, gold: 0, deck: [], relics: [], floor: 1,
+      bonusEnergyNextCombat: 0, phase: 'title', map: null, combat: null,
+      currentEvent: null, shopItems: [], rewardCards: [], timerExpiredThisFloor: false, log: [],
     });
   },
 
@@ -289,369 +211,31 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const newFloor = state.floor + 1;
     const newMap = generateFloor(newFloor);
     state.timer.startNextWork();
-    set({
-      phase: 'navigating',
-      floor: newFloor,
-      map: newMap,
-      timerExpiredThisFloor: false,
-    });
-    get().addLog([
-      'Break skipped.',
-      `=== FLOOR ${newFloor} ===`,
-      ...renderMap(newMap),
-    ]);
+    set({ phase: 'navigating', floor: newFloor, map: newMap, timerExpiredThisFloor: false });
+    get().addLog(['Break skipped.', `=== FLOOR ${newFloor} ===`, ...renderMap(newMap)]);
   },
 
-  handleCommand: (rawCmd: string) => {
-    const state = get();
-    const cmd = rawCmd.trim().toLowerCase();
-    const parts = cmd.split(/\s+/);
-    const verb = parts[0];
-
-    if (state.phase === 'title') {
-      if (verb === 'start' || verb === 'play' || verb === 'begin') {
-        get().startRun();
-      } else {
-        get().addLog(['Type "start" to begin your quest!']);
-      }
-      return;
-    }
-
-    if (state.phase === 'game_over' || state.phase === 'victory') {
-      if (verb === 'restart' || verb === 'play' || verb === 'start') {
-        get().startRun();
-      } else {
-        get().addLog(['Type "restart" to play again.']);
-      }
-      return;
-    }
-
-    if (state.phase === 'break_idle') {
-      if (verb === 'skip') {
-        get().skipBreak();
-      } else {
-        get().addLog(['On break. Type "skip" to skip break, or wait for timer.']);
-      }
-      return;
-    }
-
-    // --- NAVIGATING ---
-    if (state.phase === 'navigating') {
-      if (verb === 'map' || verb === 'm') {
-        if (state.map) {
-          get().addLog(renderMap(state.map));
-        }
-        return;
-      }
-
-      if (verb === 'go' || verb === 'move' || verb === 'path') {
-        const dir = parts[1];
-        if (!state.map) return;
-        const choices = getPathChoices(state.map);
-        let chosen: { index: number; direction: string; node: MapNode } | undefined;
-        if (dir === 'left' || dir === 'l' || dir === '1') {
-          chosen = choices.find(c => c.direction === 'left') ?? choices[0];
-        } else if (dir === 'center' || dir === 'c' || dir === '2') {
-          chosen = choices.find(c => c.direction === 'center') ?? choices[1];
-        } else if (dir === 'right' || dir === 'r' || dir === '3') {
-          chosen = choices.find(c => c.direction === 'right') ?? choices[2];
-        } else {
-          get().addLog([`Available paths: ${choices.map(c => c.direction).join(', ')}`]);
-          return;
-        }
-
-        if (!chosen) {
-          get().addLog(['No path in that direction.']);
-          return;
-        }
-
-        moveToNode(state.map, chosen.node.id);
-        const node = chosen.node;
-        get().addLog([`Moving ${chosen.direction} to [${node.type.toUpperCase()}]...`]);
-        get().enterNode(node);
-        return;
-      }
-
-      if (verb === 'status' || verb === 'stats') {
-        get().addLog(get().getStatusLines());
-        return;
-      }
-
-      if (verb === 'deck' || verb === 'd') {
-        const { deck } = get();
-        get().addLog([`Your deck (${deck.length} cards):`, ...deck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}`)]);
-        return;
-      }
-
-      if (verb === 'relics') {
-        const { relics } = get();
-        if (relics.length === 0) {
-          get().addLog(['No relics.']);
-        } else {
-          get().addLog(['Relics:', ...relics.map(r => {
-            const def = getRelicDef(r);
-            return `  - ${def?.name ?? r}: ${def?.description ?? ''}`;
-          })]);
-        }
-        return;
-      }
-
-      get().addLog([`Unknown command: "${cmd}". Use: go [left/center/right], map, status, deck, relics`]);
-      return;
-    }
-
-    // --- COMBAT ---
-    if (state.phase === 'combat') {
-      if (!state.combat) return;
-
-      if (verb === 'hand' || verb === 'h') {
-        get().addLog(renderCombatState(state.combat, state.hp, state.maxHp));
-        return;
-      }
-
-      if (verb === 'status') {
-        get().addLog(get().getStatusLines());
-        return;
-      }
-
-      if (verb === 'map') {
-        if (state.map) get().addLog(renderMap(state.map));
-        return;
-      }
-
-      if (verb === 'end' || verb === 'e') {
-        get().doEndTurn();
-        return;
-      }
-
-      if (verb === 'play' || verb === 'p') {
-        const idx = parseInt(parts[1]);
-        if (isNaN(idx)) {
-          get().addLog(['Usage: play [1-9]']);
-          return;
-        }
-        get().doPlayCard(idx);
-        return;
-      }
-
-      // Shorthand: p1, p2, etc.
-      const shortMatch = cmd.match(/^p(\d+)$/);
-      if (shortMatch) {
-        get().doPlayCard(parseInt(shortMatch[1]));
-        return;
-      }
-
-      // Just a number = play that card
-      const numMatch = cmd.match(/^(\d+)$/);
-      if (numMatch) {
-        get().doPlayCard(parseInt(numMatch[1]));
-        return;
-      }
-
-      get().addLog([`Commands: play [#], end, hand, status, map`]);
-      return;
-    }
-
-    // --- EVENT ---
-    if (state.phase === 'event') {
-      if (verb === 'event' || verb === 'choice' || verb === 'choose') {
-        const idx = parseInt(parts[1]);
-        get().doEventChoice(idx);
-        return;
-      }
-      const numMatch = cmd.match(/^(\d+)$/);
-      if (numMatch) {
-        get().doEventChoice(parseInt(numMatch[1]));
-        return;
-      }
-      if (state.currentEvent) {
-        get().addLog(renderEvent(state.currentEvent));
-      }
-      return;
-    }
-
-    // --- SHOP ---
-    if (state.phase === 'shop') {
-      if (verb === 'buy' || verb === 'b') {
-        const idx = parseInt(parts[1]);
-        get().doShopBuy(idx);
-        return;
-      }
-      if (verb === 'list' || verb === 'ls' || verb === 'shop') {
-        get().addLog(get().renderShopLines());
-        return;
-      }
-      if (verb === 'leave' || verb === 'exit' || verb === 'done') {
-        get().addLog(['You leave the shop.']);
-        set({ phase: 'navigating' });
-        if (state.map) get().addLog(renderMap(state.map));
-        return;
-      }
-      const numMatch = cmd.match(/^(\d+)$/);
-      if (numMatch) {
-        get().doShopBuy(parseInt(numMatch[1]));
-        return;
-      }
-      get().addLog(['Shop commands: list, buy [#], leave']);
-      return;
-    }
-
-    // --- REST ---
-    if (state.phase === 'rest') {
-      if (verb === 'rest' || verb === 'r' || verb === 'heal') {
-        const healAmt = Math.floor(state.maxHp * 0.3);
-        const newHp = Math.min(state.hp + healAmt, state.maxHp);
-        set({ hp: newHp });
-        get().addLog([`You rest... Healed ${newHp - state.hp} HP. HP: ${newHp}/${state.maxHp}`]);
-        set({ phase: 'navigating' });
-        if (state.map) get().addLog(renderMap(state.map));
-        return;
-      }
-      if (verb === 'smith' || verb === 'upgrade') {
-        set({ phase: 'card_upgrade' });
-        get().addLog(['Choose a card to upgrade:', ...get().deck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}${c.upgraded ? ' (already upgraded)' : ''}`)]);
-        return;
-      }
-      if (verb === 'remove') {
-        if (get().gold < 50) {
-          get().addLog(['Card removal costs 50 gold. Not enough gold.']);
-          return;
-        }
-        set({ phase: 'card_remove' });
-        get().addLog(['Choose a card to REMOVE (costs 50 gold):', ...get().deck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}`)]);
-        return;
-      }
-      if (verb === 'leave' || verb === 'exit' || verb === 'done') {
-        get().addLog(['You leave the rest site.']);
-        set({ phase: 'navigating' });
-        if (state.map) get().addLog(renderMap(state.map));
-        return;
-      }
-      get().addLog(['Rest site: rest (heal 30%), smith (upgrade card), remove (remove card, 50g), leave']);
-      return;
-    }
-
-    // --- CARD REWARD ---
-    if (state.phase === 'card_reward') {
-      const numMatch = cmd.match(/^(\d+)$/);
-      const skipCmd = verb === 'skip' || verb === 's';
-      if (skipCmd) {
-        get().addLog(['You skip the card reward.']);
-        set({ rewardCards: [], phase: 'navigating' });
-        if (state.map) get().addLog(renderMap(state.map));
-        return;
-      }
-      if (numMatch || verb === 'pick' || verb === 'choose' || verb === 'take') {
-        const idx = numMatch ? parseInt(numMatch[1]) : parseInt(parts[1]);
-        if (isNaN(idx) || idx < 1 || idx > state.rewardCards.length) {
-          get().addLog([`Pick 1-${state.rewardCards.length} or skip.`]);
-          return;
-        }
-        const chosen = state.rewardCards[idx - 1];
-        const newDeck = [...state.deck, chosen];
-        set({ deck: newDeck, rewardCards: [], phase: 'navigating' });
-        get().addLog([`Added ${chosen.name} to your deck!`]);
-        if (state.map) get().addLog(renderMap(state.map));
-        return;
-      }
-      get().addLog(['Card reward: type 1/2/3 to pick, or "skip"']);
-      return;
-    }
-
-    // --- CARD REMOVE ---
-    if (state.phase === 'card_remove') {
-      const numMatch = cmd.match(/^(\d+)$/);
-      const cancelCmd = verb === 'cancel' || verb === 'back';
-      if (cancelCmd) {
-        set({ phase: 'rest' });
-        get().addLog(['Cancelled card removal.']);
-        return;
-      }
-      if (numMatch) {
-        const idx = parseInt(numMatch[1]) - 1;
-        const deck = get().deck;
-        if (idx < 0 || idx >= deck.length) {
-          get().addLog([`Invalid card number.`]);
-          return;
-        }
-        if (get().gold < 50) {
-          get().addLog(['Not enough gold.']);
-          return;
-        }
-        const removed = deck[idx];
-        const newDeck = deck.filter((_, i) => i !== idx);
-        set({ deck: newDeck, gold: get().gold - 50, phase: 'rest' });
-        get().addLog([`Removed ${removed.name} from your deck. -50 gold.`]);
-        return;
-      }
-      get().addLog(['Type the card number to remove, or "cancel".']);
-      return;
-    }
-
-    // --- CARD UPGRADE ---
-    if (state.phase === 'card_upgrade') {
-      const numMatch = cmd.match(/^(\d+)$/);
-      const cancelCmd = verb === 'cancel' || verb === 'back';
-      if (cancelCmd) {
-        set({ phase: 'rest' });
-        get().addLog(['Cancelled upgrade.']);
-        return;
-      }
-      if (numMatch) {
-        const idx = parseInt(numMatch[1]) - 1;
-        const deck = get().deck;
-        if (idx < 0 || idx >= deck.length) {
-          get().addLog([`Invalid card number.`]);
-          return;
-        }
-        const card = deck[idx];
-        if (card.upgraded) {
-          get().addLog([`${card.name} is already upgraded.`]);
-          return;
-        }
-        const upgradedBaseId = getUpgradedId(getCardBaseId(card));
-        if (upgradedBaseId === getCardBaseId(card)) {
-          get().addLog([`${card.name} cannot be upgraded.`]);
-          return;
-        }
-        const newCard = createCard(upgradedBaseId);
-        const newDeck = [...deck];
-        newDeck[idx] = newCard;
-        set({ deck: newDeck, phase: 'rest' });
-        get().addLog([`Upgraded ${card.name} → ${newCard.name}!`]);
-        return;
-      }
-      get().addLog(['Type the card number to upgrade, or "cancel".']);
-      return;
-    }
-
-    get().addLog([`Unknown command: "${cmd}"`]);
-  },
-
-  // ---- Internal action methods ----
-
-  getStatusLines(): string[] {
+  getStatusLines: () => {
     const s = get();
-    return [
+    const lines = [
       `HP: ${s.hp}/${s.maxHp}  Gold: ${s.gold}g  Floor: ${s.floor}`,
       `Deck: ${s.deck.length} cards  Relics: ${s.relics.length}`,
-      s.relics.length > 0 ? `Relics: ${s.relics.map(r => getRelicDef(r)?.name ?? r).join(', ')}` : '',
-    ].filter(l => l !== '');
+    ];
+    if (s.relics.length > 0) {
+      lines.push(`Relics: ${s.relics.map(r => getRelicDef(r)?.name ?? r).join(', ')}`);
+    }
+    return lines;
   },
 
-  enterNode(node: MapNode): void {
+  enterNode: (node: MapNode) => {
     const state = get();
-
     if (node.type === 'monster') {
       const enemies = getNormalEnemiesForFloor(state.floor);
-      const enemyId = enemies[Math.floor(Math.random() * enemies.length)];
-      get().startCombatWithEnemy(enemyId);
+      get().startCombatWithEnemy(enemies[Math.floor(Math.random() * enemies.length)]);
     } else if (node.type === 'elite') {
-      const enemyId = getEliteEnemyForFloor(state.floor);
-      get().startCombatWithEnemy(enemyId);
+      get().startCombatWithEnemy(getEliteEnemyForFloor(state.floor));
     } else if (node.type === 'boss') {
-      const enemyId = getBossForFloor(state.floor, state.timerExpiredThisFloor);
-      get().startCombatWithEnemy(enemyId);
+      get().startCombatWithEnemy(getBossForFloor(state.floor, state.timerExpiredThisFloor));
     } else if (node.type === 'event') {
       const event = getRandomEvent();
       set({ currentEvent: event, phase: 'event' });
@@ -675,62 +259,63 @@ export const useGameStore = create<GameState>()((set, get) => ({
     }
   },
 
-  startCombatWithEnemy(enemyId: string): void {
+  startCombatWithEnemy: (enemyId: string) => {
     const state = get();
     const relics = computeRelicEffects(state.relics);
     const bonusEnergy = state.bonusEnergyNextCombat;
     const combat = startCombat(enemyId, state.deck, state.hp, state.maxHp, state.relics, relics.goldMultiplier);
-
-    // Apply bonus energy
     if (bonusEnergy !== 0) {
       combat.energy = Math.max(0, combat.energy + bonusEnergy);
       combat.maxEnergy = Math.max(1, combat.maxEnergy + bonusEnergy);
     }
-
     set({ combat, phase: 'combat', bonusEnergyNextCombat: 0 });
     get().addLog(renderCombatState(combat, state.hp, state.maxHp));
   },
 
-  doPlayCard(cardIndex: number): void {
+  doPlayCard: (cardIndex: number) => {
     const state = get();
     if (!state.combat) return;
-
     const result = playCard(state.combat, cardIndex, state.hp, state.maxHp, state.relics);
     get().addLog(result.lines);
 
-    if (result.combatEnded && result.victory) {
-      // Heal from relic
-      const relics = computeRelicEffects(state.relics);
-      let newHp = state.hp;
-      if (relics.hpPerRoom && relics.hpPerRoom > 0) {
-        newHp = Math.min(state.hp + relics.hpPerRoom, state.maxHp);
-        if (newHp > state.hp) {
-          get().addLog([`[Pomodoro Clock] Heal ${newHp - state.hp} HP.`]);
+    // Handle heal signal
+    for (const line of result.lines) {
+      const healMatch = line.match(/^  HEAL_(\d+)$/);
+      if (healMatch) {
+        const healAmt = parseInt(healMatch[1]);
+        const newHp = Math.min(state.hp + healAmt, state.maxHp);
+        const healed = newHp - state.hp;
+        if (healed > 0) {
+          set({ hp: newHp });
+          get().addLog([`  Healed ${healed} HP. HP: ${newHp}/${state.maxHp}`]);
         }
       }
+    }
 
+    if (result.combatEnded && result.victory) {
+      const relicEffects = computeRelicEffects(state.relics);
+      let newHp = state.hp;
+      if (relicEffects.hpPerRoom && relicEffects.hpPerRoom > 0) {
+        const healed = Math.min(relicEffects.hpPerRoom, state.maxHp - state.hp);
+        newHp = state.hp + healed;
+        if (healed > 0) get().addLog([`[Pomodoro Clock] Heal ${healed} HP.`]);
+      }
       const goldGained = state.combat.goldReward;
       const newGold = state.gold + goldGained;
       set({ hp: newHp, gold: newGold });
       get().addLog([`Gained ${goldGained} gold! Total: ${newGold}g`]);
 
-      // Check if boss
       const currentNode = state.map?.nodes.find(n => n.id === state.map?.currentNodeId);
       if (currentNode?.type === 'boss') {
-        // End of floor
         const ts = state.timer.getState();
         if (ts.phase === 'work' && ts.running) {
           state.timer.completeWork();
           const isLong = (ts.pomodoroCount + 1) % 4 === 0;
           state.timer.startBreak(isLong);
           const breakLen = isLong ? 'long break (15 min)' : 'short break (5 min)';
-          get().addLog([
-            `*** BOSS DEFEATED! Floor ${state.floor} complete! ***`,
-            `🍅 Pomodoro complete! Take a ${breakLen}.`,
-          ]);
+          get().addLog([`*** BOSS DEFEATED! Floor ${state.floor} complete! ***`, `🍅 Pomodoro complete! Take a ${breakLen}.`]);
           set({ phase: 'break_idle', combat: null });
         } else {
-          // Timer not running (edge case)
           get().addLog([`*** BOSS DEFEATED! Floor ${state.floor} complete! ***`]);
           const newFloor = state.floor + 1;
           const newMap = generateFloor(newFloor);
@@ -740,69 +325,34 @@ export const useGameStore = create<GameState>()((set, get) => ({
         return;
       }
 
-      // Offer card rewards
       const rewards = getCardRewards(state.floor);
       set({ rewardCards: rewards, phase: 'card_reward', combat: null });
       get().addLog([
-        '',
-        'Choose a card reward (or skip):',
+        '', 'Choose a card reward (or skip):',
         ...rewards.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name} - ${c.description}`),
         '  skip - Take no card',
       ]);
       return;
     }
-
     set({ combat: state.combat });
-
-    // Handle heal signal in lines
-    for (const line of result.lines) {
-      const healMatch = line.match(/^  HEAL_(\d+)$/);
-      if (healMatch) {
-        const healAmt = parseInt(healMatch[1]);
-        const newHp = Math.min(state.hp + healAmt, state.maxHp);
-        set({ hp: newHp });
-        get().addLog([`  Healed ${newHp - state.hp} HP. HP: ${newHp}/${state.maxHp}`]);
-      }
-    }
   },
 
-  doEndTurn(): void {
+  doEndTurn: () => {
     const state = get();
     if (!state.combat) return;
-
-    const discardLines = endPlayerTurn(state.combat, state.hp, state.maxHp);
-    get().addLog(discardLines);
-
+    get().addLog(endPlayerTurn(state.combat, state.hp, state.maxHp));
     const enemyResult = enemyTurn(state.combat, state.hp, state.maxHp);
     get().addLog(enemyResult.lines);
-
     let newHp = state.hp + enemyResult.hpChange;
-
     if (enemyResult.combatEnded) {
-      newHp = Math.max(0, newHp);
-      set({ hp: newHp, combat: state.combat });
-      get().addLog([
-        '',
-        '*** YOU HAVE BEEN DEFEATED ***',
-        'Your quest ends here...',
-        '',
-        'Type "restart" to play again.',
-      ]);
+      set({ hp: Math.max(0, newHp), combat: state.combat });
+      get().addLog(['', '*** YOU HAVE BEEN DEFEATED ***', 'Your quest ends here...', '', 'Type "restart" to play again.']);
       set({ phase: 'game_over' });
       return;
     }
-
-    // Handle burnout
-    if (state.combat.burnoutStacks > 0) {
-      newHp = Math.max(1, newHp); // clamp to 1 (burnout can't kill directly at start of turn)
-    }
-
     set({ hp: Math.max(0, newHp), combat: state.combat });
-
-    // Start player's next turn
     const turnResult = startPlayerTurn(state.combat, Math.max(0, newHp), state.maxHp, state.relics);
     get().addLog(turnResult.lines);
-
     let hpAfterTurn = Math.max(0, newHp) + turnResult.hpChange;
     if (hpAfterTurn <= 0) {
       set({ hp: 0 });
@@ -814,23 +364,17 @@ export const useGameStore = create<GameState>()((set, get) => ({
     get().addLog(renderCombatState(state.combat, hpAfterTurn, state.maxHp));
   },
 
-  doEventChoice(choiceIndex: number): void {
+  doEventChoice: (choiceIndex: number) => {
     const state = get();
     if (!state.currentEvent) return;
     const event = state.currentEvent;
-
     if (choiceIndex < 1 || choiceIndex > event.choices.length) {
       get().addLog([`Choose 1-${event.choices.length}`]);
       return;
     }
-
     const choiceId = event.choices[choiceIndex - 1].id;
     const outcome = resolveEventChoice(event, choiceId);
-    if (!outcome) {
-      get().addLog(['Invalid choice.']);
-      return;
-    }
-
+    if (!outcome) { get().addLog(['Invalid choice.']); return; }
     get().addLog([`> ${event.choices[choiceIndex - 1].text}`, '', outcome.description]);
 
     let newHp = state.hp;
@@ -866,48 +410,23 @@ export const useGameStore = create<GameState>()((set, get) => ({
     }
     if (outcome.energyNextCombat) {
       newBonusEnergy += outcome.energyNextCombat;
-      if (outcome.energyNextCombat > 0) {
-        get().addLog([`  Next combat: +${outcome.energyNextCombat} energy.`]);
-      } else {
-        get().addLog([`  Next combat: ${outcome.energyNextCombat} energy.`]);
-      }
+      get().addLog([outcome.energyNextCombat > 0 ? `  Next combat: +${outcome.energyNextCombat} energy.` : `  Next combat: ${outcome.energyNextCombat} energy.`]);
     }
     if (outcome.removeCard) {
-      set({ hp: newHp, maxHp: newMaxHp, gold: newGold, deck: newDeck, relics: newRelics, bonusEnergyNextCombat: newBonusEnergy });
-      set({ phase: 'card_remove', currentEvent: null });
-      get().addLog(['Choose a card to remove from your deck:',
-        ...newDeck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}`)]);
+      set({ hp: newHp, maxHp: newMaxHp, gold: newGold, deck: newDeck, relics: newRelics, bonusEnergyNextCombat: newBonusEnergy, phase: 'card_remove', currentEvent: null });
+      get().addLog(['Choose a card to remove from your deck:', ...newDeck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}`)]);
       return;
     }
-
-    set({
-      hp: newHp,
-      maxHp: newMaxHp,
-      gold: newGold,
-      deck: newDeck,
-      relics: newRelics,
-      bonusEnergyNextCombat: newBonusEnergy,
-      currentEvent: null,
-      phase: 'navigating',
-    });
-
+    set({ hp: newHp, maxHp: newMaxHp, gold: newGold, deck: newDeck, relics: newRelics, bonusEnergyNextCombat: newBonusEnergy, currentEvent: null, phase: 'navigating' });
     if (state.map) get().addLog(['', ...renderMap(state.map)]);
   },
 
-  doShopBuy(itemIndex: number): void {
+  doShopBuy: (itemIndex: number) => {
     const state = get();
     const items = state.shopItems;
-
-    if (itemIndex < 1 || itemIndex > items.length) {
-      get().addLog([`Choose 1-${items.length}`]);
-      return;
-    }
-
+    if (itemIndex < 1 || itemIndex > items.length) { get().addLog([`Choose 1-${items.length}`]); return; }
     const item = items[itemIndex - 1];
-    if (state.gold < item.cost) {
-      get().addLog([`Not enough gold. Need ${item.cost}g, have ${state.gold}g.`]);
-      return;
-    }
+    if (state.gold < item.cost) { get().addLog([`Not enough gold. Need ${item.cost}g, have ${state.gold}g.`]); return; }
 
     let newGold = state.gold - item.cost;
     let newDeck = [...state.deck];
@@ -922,18 +441,18 @@ export const useGameStore = create<GameState>()((set, get) => ({
       newRelics = [...newRelics, relicId];
       get().addLog([`Bought ${item.name}!`]);
     } else if (item.type === 'heal') {
+      const beforeHp = newHp;
       newHp = Math.min(state.hp + 20, state.maxHp);
-      get().addLog([`Rested and recovered! Healed ${newHp - state.hp} HP.`]);
+      get().addLog([`Rested and recovered! Healed ${newHp - beforeHp} HP.`]);
     }
 
-    // Remove bought item
     const newItems = items.filter((_, i) => i !== itemIndex - 1);
     set({ gold: newGold, deck: newDeck, relics: newRelics, hp: newHp, shopItems: newItems });
     get().addLog([`Remaining gold: ${newGold}g`]);
     get().addLog(get().renderShopLines());
   },
 
-  renderShopLines(): string[] {
+  renderShopLines: () => {
     const state = get();
     const lines: string[] = [
       '╔══════════════════════════════════════════╗',
@@ -952,5 +471,169 @@ export const useGameStore = create<GameState>()((set, get) => ({
     lines.push('╚══════════════════════════════════════════╝');
     lines.push('Commands: buy [#], list, leave');
     return lines;
+  },
+
+  handleCommand: (rawCmd: string) => {
+    const state = get();
+    const cmd = rawCmd.trim().toLowerCase();
+    const parts = cmd.split(/\s+/);
+    const verb = parts[0];
+
+    if (state.phase === 'title') {
+      if (verb === 'start' || verb === 'play' || verb === 'begin') { get().startRun(); }
+      else { get().addLog(['Type "start" to begin your quest!']); }
+      return;
+    }
+    if (state.phase === 'game_over' || state.phase === 'victory') {
+      if (verb === 'restart' || verb === 'play' || verb === 'start') { get().startRun(); }
+      else { get().addLog(['Type "restart" to play again.']); }
+      return;
+    }
+    if (state.phase === 'break_idle') {
+      if (verb === 'skip') { get().skipBreak(); }
+      else { get().addLog(['On break. Type "skip" to skip break, or wait for timer.']); }
+      return;
+    }
+    if (state.phase === 'navigating') {
+      if (verb === 'map' || verb === 'm') { if (state.map) get().addLog(renderMap(state.map)); return; }
+      if (verb === 'go' || verb === 'move' || verb === 'path') {
+        const dir = parts[1];
+        if (!state.map) return;
+        const choices = getPathChoices(state.map);
+        let chosen: typeof choices[0] | undefined;
+        if (dir === 'left' || dir === 'l' || dir === '1') chosen = choices.find(c => c.direction === 'left') ?? choices[0];
+        else if (dir === 'center' || dir === 'c' || dir === '2') chosen = choices.find(c => c.direction === 'center') ?? choices[1];
+        else if (dir === 'right' || dir === 'r' || dir === '3') chosen = choices.find(c => c.direction === 'right') ?? choices[2];
+        else { get().addLog([`Available paths: ${choices.map(c => c.direction).join(', ')}`]); return; }
+        if (!chosen) { get().addLog(['No path in that direction.']); return; }
+        moveToNode(state.map, chosen.node.id);
+        get().addLog([`Moving ${chosen.direction} to [${chosen.node.type.toUpperCase()}]...`]);
+        get().enterNode(chosen.node);
+        return;
+      }
+      if (verb === 'status' || verb === 'stats') { get().addLog(get().getStatusLines()); return; }
+      if (verb === 'deck' || verb === 'd') {
+        const { deck } = get();
+        get().addLog([`Your deck (${deck.length} cards):`, ...deck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}`)]);
+        return;
+      }
+      if (verb === 'relics') {
+        const { relics } = get();
+        if (relics.length === 0) { get().addLog(['No relics.']); }
+        else { get().addLog(['Relics:', ...relics.map(r => { const def = getRelicDef(r); return `  - ${def?.name ?? r}: ${def?.description ?? ''}`; })]); }
+        return;
+      }
+      get().addLog([`Unknown command: "${cmd}". Use: go [left/center/right], map, status, deck, relics`]);
+      return;
+    }
+    if (state.phase === 'combat') {
+      if (!state.combat) return;
+      if (verb === 'hand' || verb === 'h') { get().addLog(renderCombatState(state.combat, state.hp, state.maxHp)); return; }
+      if (verb === 'status') { get().addLog(get().getStatusLines()); return; }
+      if (verb === 'map') { if (state.map) get().addLog(renderMap(state.map)); return; }
+      if (verb === 'end' || verb === 'e') { get().doEndTurn(); return; }
+      if (verb === 'play' || verb === 'p') {
+        const idx = parseInt(parts[1]);
+        if (isNaN(idx)) { get().addLog(['Usage: play [1-9]']); return; }
+        get().doPlayCard(idx); return;
+      }
+      const shortMatch = cmd.match(/^p(\d+)$/);
+      if (shortMatch) { get().doPlayCard(parseInt(shortMatch[1])); return; }
+      const numMatch = cmd.match(/^(\d+)$/);
+      if (numMatch) { get().doPlayCard(parseInt(numMatch[1])); return; }
+      get().addLog([`Commands: play [#], end, hand, status, map`]);
+      return;
+    }
+    if (state.phase === 'event') {
+      if (verb === 'event' || verb === 'choice' || verb === 'choose') { get().doEventChoice(parseInt(parts[1])); return; }
+      const numMatch = cmd.match(/^(\d+)$/);
+      if (numMatch) { get().doEventChoice(parseInt(numMatch[1])); return; }
+      if (state.currentEvent) get().addLog(renderEvent(state.currentEvent));
+      return;
+    }
+    if (state.phase === 'shop') {
+      if (verb === 'buy' || verb === 'b') { get().doShopBuy(parseInt(parts[1])); return; }
+      if (verb === 'list' || verb === 'ls' || verb === 'shop') { get().addLog(get().renderShopLines()); return; }
+      if (verb === 'leave' || verb === 'exit' || verb === 'done') {
+        get().addLog(['You leave the shop.']); set({ phase: 'navigating' });
+        if (state.map) get().addLog(renderMap(state.map)); return;
+      }
+      const numMatch = cmd.match(/^(\d+)$/);
+      if (numMatch) { get().doShopBuy(parseInt(numMatch[1])); return; }
+      get().addLog(['Shop commands: list, buy [#], leave']); return;
+    }
+    if (state.phase === 'rest') {
+      if (verb === 'rest' || verb === 'r' || verb === 'heal') {
+        const healAmt = Math.floor(state.maxHp * 0.3);
+        const newHp = Math.min(state.hp + healAmt, state.maxHp);
+        set({ hp: newHp }); get().addLog([`You rest... Healed ${newHp - state.hp} HP. HP: ${newHp}/${state.maxHp}`]);
+        set({ phase: 'navigating' }); if (state.map) get().addLog(renderMap(state.map)); return;
+      }
+      if (verb === 'smith' || verb === 'upgrade') {
+        set({ phase: 'card_upgrade' });
+        get().addLog(['Choose a card to upgrade:', ...get().deck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}${c.upgraded ? ' (already upgraded)' : ''}`)]);
+        return;
+      }
+      if (verb === 'remove') {
+        if (get().gold < 50) { get().addLog(['Card removal costs 50 gold. Not enough gold.']); return; }
+        set({ phase: 'card_remove' });
+        get().addLog(['Choose a card to REMOVE (costs 50 gold):', ...get().deck.map((c, i) => `  ${i + 1}. [${c.cost}] ${c.name}`)]);
+        return;
+      }
+      if (verb === 'leave' || verb === 'exit' || verb === 'done') {
+        get().addLog(['You leave the rest site.']); set({ phase: 'navigating' });
+        if (state.map) get().addLog(renderMap(state.map)); return;
+      }
+      get().addLog(['Rest site: rest (heal 30%), smith (upgrade card), remove (remove card, 50g), leave']); return;
+    }
+    if (state.phase === 'card_reward') {
+      if (verb === 'skip' || verb === 's') {
+        get().addLog(['You skip the card reward.']); set({ rewardCards: [], phase: 'navigating' });
+        if (state.map) get().addLog(renderMap(state.map)); return;
+      }
+      const numMatch = cmd.match(/^(\d+)$/);
+      if (numMatch || verb === 'pick' || verb === 'choose' || verb === 'take') {
+        const idx = numMatch ? parseInt(numMatch[1]) : parseInt(parts[1]);
+        if (isNaN(idx) || idx < 1 || idx > state.rewardCards.length) { get().addLog([`Pick 1-${state.rewardCards.length} or skip.`]); return; }
+        const chosen = state.rewardCards[idx - 1];
+        set({ deck: [...state.deck, chosen], rewardCards: [], phase: 'navigating' });
+        get().addLog([`Added ${chosen.name} to your deck!`]);
+        if (state.map) get().addLog(renderMap(state.map)); return;
+      }
+      get().addLog(['Card reward: type 1/2/3 to pick, or "skip"']); return;
+    }
+    if (state.phase === 'card_remove') {
+      if (verb === 'cancel' || verb === 'back') { set({ phase: 'rest' }); get().addLog(['Cancelled card removal.']); return; }
+      const numMatch = cmd.match(/^(\d+)$/);
+      if (numMatch) {
+        const idx = parseInt(numMatch[1]) - 1;
+        const deck = get().deck;
+        if (idx < 0 || idx >= deck.length) { get().addLog([`Invalid card number.`]); return; }
+        if (get().gold < 50) { get().addLog(['Not enough gold.']); return; }
+        const removed = deck[idx];
+        set({ deck: deck.filter((_, i) => i !== idx), gold: get().gold - 50, phase: 'rest' });
+        get().addLog([`Removed ${removed.name} from your deck. -50 gold.`]); return;
+      }
+      get().addLog(['Type the card number to remove, or "cancel".']); return;
+    }
+    if (state.phase === 'card_upgrade') {
+      if (verb === 'cancel' || verb === 'back') { set({ phase: 'rest' }); get().addLog(['Cancelled upgrade.']); return; }
+      const numMatch = cmd.match(/^(\d+)$/);
+      if (numMatch) {
+        const idx = parseInt(numMatch[1]) - 1;
+        const deck = get().deck;
+        if (idx < 0 || idx >= deck.length) { get().addLog([`Invalid card number.`]); return; }
+        const card = deck[idx];
+        if (card.upgraded) { get().addLog([`${card.name} is already upgraded.`]); return; }
+        const upgradedBaseId = getUpgradedId(getCardBaseId(card));
+        if (upgradedBaseId === getCardBaseId(card)) { get().addLog([`${card.name} cannot be upgraded.`]); return; }
+        const newCard = createCard(upgradedBaseId);
+        const newDeck = [...deck]; newDeck[idx] = newCard;
+        set({ deck: newDeck, phase: 'rest' });
+        get().addLog([`Upgraded ${card.name} → ${newCard.name}!`]); return;
+      }
+      get().addLog(['Type the card number to upgrade, or "cancel".']); return;
+    }
+    get().addLog([`Unknown command: "${cmd}"`]);
   },
 }));
