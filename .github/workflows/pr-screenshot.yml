@@ -7,7 +7,6 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  actions: read
 
 jobs:
   screenshot:
@@ -48,7 +47,6 @@ jobs:
 
           const baseSha = process.env.BASE_SHA;
           const headSha = process.env.HEAD_SHA;
-
           const diff = execSync(`git diff --unified=0 ${baseSha} ${headSha} -- index.html`, { encoding: 'utf8' });
 
           const idRegex = /id="([^"]+)"/g;
@@ -56,39 +54,36 @@ jobs:
           const changedSelectors = new Set();
 
           for (const line of diff.split('\n')) {
-            if (!line.startsWith('+') || line.startsWith('+++')) {
-              continue;
-            }
+            if (!line.startsWith('+') || line.startsWith('+++')) continue;
 
             let match;
-            while ((match = idRegex.exec(line)) !== null) {
-              changedSelectors.add(`#${match[1]}`);
-            }
-
+            while ((match = idRegex.exec(line)) !== null) changedSelectors.add(`#${match[1]}`);
             while ((match = classRegex.exec(line)) !== null) {
               const firstClass = match[1].trim().split(/\s+/)[0];
-              if (firstClass) {
-                changedSelectors.add(`.${firstClass}`);
-              }
+              if (firstClass) changedSelectors.add(`.${firstClass}`);
             }
           }
 
-          const selectors = [...changedSelectors].slice(0, 6);
+          const selectors = [...changedSelectors].slice(0, 3);
           fs.writeFileSync('pr-screenshots/targets.txt', selectors.join('\n'));
 
           (async () => {
             const browser = await chromium.launch();
-            const page = await browser.newPage({ viewport: { width: 1440, height: 2200 } });
+            const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
             await page.goto('http://127.0.0.1:4173/index.html', { waitUntil: 'networkidle' });
 
-            await page.screenshot({ path: 'pr-screenshots/full-page.png', fullPage: true });
+            await page.screenshot({ path: 'pr-screenshots/full-page.jpg', type: 'jpeg', quality: 35 });
 
             let index = 1;
             for (const selector of selectors) {
               const locator = page.locator(selector).first();
               if (await locator.count()) {
                 await locator.scrollIntoViewIfNeeded();
-                await locator.screenshot({ path: path.join('pr-screenshots', `component-${index}.png`) });
+                await locator.screenshot({
+                  path: path.join('pr-screenshots', `component-${index}.jpg`),
+                  type: 'jpeg',
+                  quality: 50,
+                });
                 index += 1;
               }
             }
@@ -100,38 +95,46 @@ jobs:
           });
           NODE
 
-      - name: Upload screenshot artifacts
-        id: upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-screenshots
-          path: pr-screenshots
-
-      - name: Add PR comment with component-focused screenshots
+      - name: Add PR comment with embedded screenshots
         uses: actions/github-script@v7
-        env:
-          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
         with:
           script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = context.issue.number;
             const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
-            const artifactUrl = process.env.ARTIFACT_URL || runUrl;
+
+            const screenshotsDir = 'pr-screenshots';
+            const imageFiles = fs.readdirSync(screenshotsDir)
+              .filter((name) => name.endsWith('.jpg'))
+              .sort((a, b) => a.localeCompare(b));
+
+            const embeds = [];
+            let totalChars = 0;
+            const maxChars = 60000;
+            for (const fileName of imageFiles) {
+              const filePath = path.join(screenshotsDir, fileName);
+              const base64 = fs.readFileSync(filePath, 'base64');
+              const markdown = `### ${fileName}\n![${fileName}](data:image/jpeg;base64,${base64})`;
+              if (totalChars + markdown.length > maxChars) {
+                break;
+              }
+              embeds.push(markdown);
+              totalChars += markdown.length;
+            }
 
             const body = [
               '<!-- pr-screenshot-comment -->',
               '📸 Automated UI screenshots generated for this PR.',
               '',
-              'Screenshots include:',
-              '- Full-page screen (`full-page.png`)',
-              '- Component-focused captures for changed selectors in `index.html` (`component-*.png`)',
+              'Included images are embedded below (no screenshot files are committed):',
+              ...embeds,
               '',
-              `![Full page screenshot](${artifactUrl})`,
-              '',
-              `Download the screenshot bundle from: ${artifactUrl}`,
-              `Workflow run: ${runUrl}`
-            ].join('\n');
+              `Workflow run: ${runUrl}`,
+            ].join('\n\n');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner,
@@ -145,17 +148,7 @@ jobs:
             );
 
             if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body,
-              });
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
             } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
-              });
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
