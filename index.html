@@ -146,8 +146,8 @@ header{display:flex;align-items:center;justify-content:space-between;border:2px 
 .hud-chip.mp{border-left:4px solid rgba(96,165,250,.8)}
 .hud-chip.mp .hud-chip-val{color:var(--blue)}
 /* hero panel */
-.hero-panel{display:grid;grid-template-columns:206px 1fr;gap:11px}
-#charAnchor{display:contents}
+.hero-panel{display:block}
+#charAnchor{display:block}
 .char-card{border:3px solid var(--purple);background:var(--panel);padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 0 20px rgba(167,139,250,.2)}
 .hero-spr{width:80px;height:80px;animation:hero-float 3s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
 .char-nm{font-family:'Press Start 2P',monospace;font-size:.38rem;color:var(--gold);text-align:center;word-break:break-all}
@@ -169,9 +169,10 @@ header{display:flex;align-items:center;justify-content:space-between;border:2px 
 .tbtn.act.tq{color:var(--gold)}.tbtn.act.tm{color:var(--green)}
 .tbtn.act.tsh{color:var(--blue)}.tbtn.act.tac{color:var(--purple)}
 .tbtn.act.tch{color:var(--tomato2)}
-.tbtn.tch{display:none}
 .tc{display:none;flex-direction:column;gap:12px;border:2px solid var(--border);border-top:none;padding:14px;background:var(--panel)}
 .tc.act{display:flex}
+.hero-tab-grid{display:grid;grid-template-columns:minmax(0,220px) 1fr;gap:10px}
+.hero-hud-wrap{display:flex;flex-direction:column;gap:10px}
 /* quest tab */
 .qb{border:2px solid rgba(245,200,66,.8);background:linear-gradient(135deg,#1a1408,var(--panel));padding:10px 13px;display:flex;align-items:center;gap:9px}
 .qi{font-size:1.3rem}.qinfo{flex:1}
@@ -301,8 +302,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
 .notif-banner.ach{border-color:var(--purple);color:var(--purple);box-shadow:0 0 20px rgba(167,139,250,.4)}
 @media(max-width:640px){
   #creationScreen{justify-content:flex-start;padding-top:56px}
-  #charAnchor{display:none}
-  .hero-panel{grid-template-columns:1fr}.bg2{grid-template-columns:1fr}
+  .bg2{grid-template-columns:1fr}
   .hud-strip{grid-template-columns:1fr 1fr;gap:6px}
   .hud-chip{min-height:52px;padding:7px 8px}
   .hud-chip-lbl{font-size:.25rem}
@@ -318,7 +318,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
   .brow .btn{padding:9px 8px;font-size:.36rem}
   .tdisp{font-size:2rem}.class-grid{grid-template-columns:1fr 1fr}
   .shop-grid{grid-template-columns:1fr}
-  .tbtn.tch{display:block}
+  .hero-tab-grid{grid-template-columns:1fr}
   .boss-panel,.bg2{opacity:.82}
   #s3{gap:10px}
   #s3 .step-lbl{font-size:.36rem;line-height:1.6}
@@ -475,6 +475,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
       <span>Notifications</span>
       <button class="btn btn-s" id="notifBtn" onclick="toggleNotifPerm()" style="font-size:.3rem;padding:5px 8px">REQUEST PERMISSION</button>
     </div>
+    <div class="sovr"><span>View feats</span><button class="btn btn-s" onclick="openFeats(true)" style="font-size:.3rem;padding:5px 8px">OPEN FEATS</button></div>
     <div class="sovr"><span>Change character</span><button class="dbtn" onclick="doReroll()">REROLL</button></div>
     <div class="sovr"><span>Reset ALL progress</span><button class="dbtn" onclick="doReset()">RESET</button></div>
     <div style="text-align:center"><button class="btn btn-s" onclick="closeSet()">CLOSE</button></div>
@@ -486,62 +487,75 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
   <header>
     <div class="logo">🍅 Tomato<span>Quest</span></div>
     <div class="hdr-r">
+      <button class="hbtn" id="featsBtn" onclick="openFeats()">🏆 FEATS <span class="badge" id="featsBadge">0</span></button>
       <button class="hbtn" onclick="openSet()">⚙</button>
       <button class="hbtn" id="musBtn" onclick="toggleMusic()">♪ OFF</button>
       <div class="day-badge" id="dayB">DAY 1</div>
       <div style="font-family:'Press Start 2P',monospace;font-size:.36rem;color:var(--text2)">🔥<span style="color:var(--gold)" id="strD">0</span></div>
     </div>
   </header>
-  <div class="hud-strip">
-    <div class="hud-chip gold">
-      <div class="hud-chip-lbl">🪙 GOLD</div>
-      <div class="hud-chip-val" id="hudGold">0</div>
-      <div class="hud-chip-sub">Earned: <span id="hudGoldEarned">0</span></div>
-    </div>
-    <div class="hud-chip xp">
-      <div class="hud-chip-lbl">✨ XP PROGRESS</div>
-      <div class="hud-chip-val" id="hudXpPct">0%</div>
-      <div class="hud-chip-sub"><span id="hudXpLeft">200</span> XP to level</div>
-    </div>
-    <div class="hud-chip hp">
-      <div class="hud-chip-lbl">❤ HP STATUS</div>
-      <div class="hud-chip-val" id="hudHpPct">100%</div>
-      <div class="hud-chip-sub"><span id="hudHpRaw">100 / 100</span></div>
-    </div>
-    <div class="hud-chip mp">
-      <div class="hud-chip-lbl">💧 MP STATUS</div>
-      <div class="hud-chip-val" id="hudMpPct">63%</div>
-      <div class="hud-chip-sub"><span id="hudMpRaw">50 / 80</span></div>
-    </div>
-  </div>
 
   <div class="hero-panel">
-    <div id="charAnchor">
-    <div class="char-card" id="charCard">
-      <div class="hero-spr" id="hspr"></div>
-      <div class="char-nm" id="charNm">HERO</div>
-      <div class="char-cl" id="charCl">⚔ Knight</div>
-      <div class="char-lv">LVL <span id="charLv">1</span></div>
-      <div class="sr"><div class="sl"><span>❤ HP</span><span id="hpV">100/100</span></div><div class="bt"><div class="bf bf-hp" id="hpB" style="width:100%"></div></div></div>
-      <div class="sr"><div class="sl"><span>✨ XP</span><span id="xpV">0/200</span></div><div class="bt"><div class="bf bf-xp" id="xpB" style="width:0%"></div></div></div>
-      <div class="sr"><div class="sl"><span>💧 MP</span><span id="mpV">50/80</span></div><div class="bt"><div class="bf bf-mp" id="mpB" style="width:63%"></div></div></div>
-      <div style="margin-top:3px;color:var(--text2);font-size:.76rem;">🪙<span style="color:var(--gold)" id="goldD">0</span></div>
-      <div class="cls-bonus" id="clsBonus"></div>
-      <div class="buff-bar" id="buffBar"></div>
-    </div>
-    </div>
-
     <div class="main-area">
       <div class="tab-bar">
         <button class="tbtn tch" onclick="swTab('char')">👤 HERO</button>
         <button class="tbtn tq act" onclick="swTab('quest')">📜 QUEST</button>
         <button class="tbtn tm" onclick="swTab('map')">🗺 MAP</button>
         <button class="tbtn tsh" onclick="swTab('shop')">🛒 SHOP</button>
-        <button class="tbtn tac" onclick="swTab('ach')">🏆 FEATS</button>
       </div>
 
       <div class="tc" id="tc-char">
-        <div id="charMobileSlot"></div>
+        <div class="hero-tab-grid">
+          <div id="charAnchor">
+            <div class="char-card" id="charCard">
+              <div class="hero-spr" id="hspr"></div>
+              <div class="char-nm" id="charNm">HERO</div>
+              <div class="char-cl" id="charCl">⚔ Knight</div>
+              <div class="char-lv">LVL <span id="charLv">1</span></div>
+              <div class="sr"><div class="sl"><span>❤ HP</span><span id="hpV">100/100</span></div><div class="bt"><div class="bf bf-hp" id="hpB" style="width:100%"></div></div></div>
+              <div class="sr"><div class="sl"><span>✨ XP</span><span id="xpV">0/200</span></div><div class="bt"><div class="bf bf-xp" id="xpB" style="width:0%"></div></div></div>
+              <div class="sr"><div class="sl"><span>💧 MP</span><span id="mpV">50/80</span></div><div class="bt"><div class="bf bf-mp" id="mpB" style="width:63%"></div></div></div>
+              <div style="margin-top:3px;color:var(--text2);font-size:.76rem;">🪙<span style="color:var(--gold)" id="goldD">0</span></div>
+              <div class="cls-bonus" id="clsBonus"></div>
+              <div class="buff-bar" id="buffBar"></div>
+            </div>
+          </div>
+          <div class="hero-hud-wrap">
+            <div class="hud-strip">
+              <div class="hud-chip gold">
+                <div class="hud-chip-lbl">🪙 GOLD</div>
+                <div class="hud-chip-val" id="hudGold">0</div>
+                <div class="hud-chip-sub">Earned: <span id="hudGoldEarned">0</span></div>
+              </div>
+              <div class="hud-chip xp">
+                <div class="hud-chip-lbl">✨ XP PROGRESS</div>
+                <div class="hud-chip-val" id="hudXpPct">0%</div>
+                <div class="hud-chip-sub"><span id="hudXpLeft">200</span> XP to level</div>
+              </div>
+              <div class="hud-chip hp">
+                <div class="hud-chip-lbl">❤ HP STATUS</div>
+                <div class="hud-chip-val" id="hudHpPct">100%</div>
+                <div class="hud-chip-sub"><span id="hudHpRaw">100 / 100</span></div>
+              </div>
+              <div class="hud-chip mp">
+                <div class="hud-chip-lbl">💧 MP STATUS</div>
+                <div class="hud-chip-val" id="hudMpPct">63%</div>
+                <div class="hud-chip-sub"><span id="hudMpRaw">50 / 80</span></div>
+              </div>
+            </div>
+            <div class="sp gb">
+              <div class="ptitle"><div class="pdot" style="background:var(--gold)"></div> STATS</div>
+              <div class="sgrid">
+                <div class="ssl">🍅 Sessions</div><div style="color:var(--tomato2)" id="sP">0</div>
+                <div class="ssl">⏱ Focus time</div><div style="color:var(--blue)" id="sM">0 min</div>
+                <div class="ssl">🐉 Bosses slain</div><div style="color:var(--hp)" id="sB">0</div>
+                <div class="ssl">🏆 Feats earned</div><div style="color:var(--purple)" id="sA">0</div>
+                <div class="ssl">🪙 Gold spent</div><div style="color:var(--gold)" id="sGs">0</div>
+                <div class="ssl">🗺 Roads walked</div><div style="color:var(--green)" id="sR">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- QUEST TAB -->
@@ -625,17 +639,6 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
     <div class="sp">
       <div class="ptitle"><div class="pdot" style="background:var(--tomato)"></div> SESSION LOG</div>
       <div class="hlist" id="hList"><div style="color:var(--text2);font-size:.8rem;padding:5px">No sessions yet!</div></div>
-    </div>
-    <div class="sp gb">
-      <div class="ptitle"><div class="pdot" style="background:var(--gold)"></div> STATS</div>
-      <div class="sgrid">
-        <div class="ssl">🍅 Sessions</div><div style="color:var(--tomato2)" id="sP">0</div>
-        <div class="ssl">⏱ Focus time</div><div style="color:var(--blue)" id="sM">0 min</div>
-        <div class="ssl">🐉 Bosses slain</div><div style="color:var(--hp)" id="sB">0</div>
-        <div class="ssl">🏆 Feats earned</div><div style="color:var(--purple)" id="sA">0</div>
-        <div class="ssl">🪙 Gold spent</div><div style="color:var(--gold)" id="sGs">0</div>
-        <div class="ssl">🗺 Roads walked</div><div style="color:var(--green)" id="sR">0</div>
-      </div>
     </div>
   </div>
 
@@ -1137,6 +1140,10 @@ if(!G.heroName){
 ══════════════════════════════════════════ */
 function openSet(){document.getElementById('setOv').classList.add('show')}
 function closeSet(){document.getElementById('setOv').classList.remove('show')}
+function openFeats(fromSettings=false){
+  if(fromSettings)closeSet();
+  swTab('ach');
+}
 function doReroll(){if(!confirm('Reset character? Stats kept.'))return;save({heroName:'',heroClass:''});closeSet();location.reload()}
 function doReset(){if(!confirm('DELETE all progress? Cannot be undone.'))return;localStorage.removeItem(LK);location.reload()}
 
@@ -1346,7 +1353,6 @@ function closeEv(){document.getElementById('evOv').classList.remove('show')}
    TABS
 ══════════════════════════════════════════ */
 function swTab(t){
-  syncCharacterPanel();
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('act'));
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('act'));
   // Map tab name → button class suffix
@@ -1359,16 +1365,6 @@ function swTab(t){
   if(t==='map')setTimeout(()=>{drawMap();updateMapUI()},50);
   if(t==='shop')renderShop();
   if(t==='ach')renderAchievements();
-}
-
-function syncCharacterPanel(){
-  const isMobile=window.matchMedia('(max-width:640px)').matches;
-  const card=document.getElementById('charCard');
-  const mobileSlot=document.getElementById('charMobileSlot');
-  const anchor=document.getElementById('charAnchor');
-  if(!card||!mobileSlot||!anchor)return;
-  if(isMobile&&card.parentElement!==mobileSlot)mobileSlot.appendChild(card);
-  if(!isMobile&&card.parentElement!==anchor)anchor.appendChild(card);
 }
 
 /* ══════════════════════════════════════════
@@ -1523,18 +1519,22 @@ function updateUI(){
   document.getElementById('qDesc').textContent=QUESTS[G.bossesSlain%QUESTS.length];
   document.getElementById('sP').textContent=G.totalPoms;document.getElementById('sM').textContent=G.totalMins+' min';
   document.getElementById('sB').textContent=G.bossesSlain;
-  document.getElementById('sA').textContent=(G.achievements||[]).length;
+  const featsCount=(G.achievements||[]).length;
+  document.getElementById('sA').textContent=featsCount;
   document.getElementById('sGs').textContent=(G.goldSpent||0).toLocaleString();
   document.getElementById('sR').textContent=G.roadsCompleted||0;
+  const featsBadge=document.getElementById('featsBadge');
+  if(featsBadge){
+    featsBadge.textContent=featsCount;
+    featsBadge.style.display=featsCount>0?'inline-block':'none';
+  }
   document.getElementById('fP').textContent=G.todayPoms;document.getElementById('fS').textContent=G.streak;document.getElementById('fL').textContent=G.level;
   // Update shop gold display if visible
   const sg=document.getElementById('shopGold');if(sg)sg.textContent=G.gold.toLocaleString();
 }
 window.addEventListener('resize',()=>{
-  syncCharacterPanel();
   if(document.getElementById('tc-map').classList.contains('act'))drawMap()
 });
-syncCharacterPanel();
 </script>
 </body>
 </html>
