@@ -1,0 +1,119 @@
+name: PR Screenshot
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install --no-package-lock --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Capture screenshot
+        run: |
+          python3 -m http.server 4173 --directory . >/tmp/http.log 2>&1 &
+          SERVER_PID=$!
+          trap "kill ${SERVER_PID}" EXIT
+          npx playwright screenshot --device="Desktop Chrome" http://127.0.0.1:4173/index.html /tmp/pr-screenshot.png
+
+      - name: Publish screenshot branch asset
+        id: publish
+        env:
+          SHOTS_BRANCH: pr-screenshots
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin "${SHOTS_BRANCH}" || true
+          if git show-ref --verify --quiet "refs/remotes/origin/${SHOTS_BRANCH}"; then
+            git checkout -B "${SHOTS_BRANCH}" "origin/${SHOTS_BRANCH}"
+          else
+            git checkout --orphan "${SHOTS_BRANCH}"
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p screenshots
+          TARGET_FILE="screenshots/pr-${PR_NUMBER}.png"
+          cp /tmp/pr-screenshot.png "${TARGET_FILE}"
+          git add "${TARGET_FILE}"
+
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit."
+          else
+            git commit -m "Update screenshot for PR #${PR_NUMBER} [skip ci]"
+            git push origin "${SHOTS_BRANCH}"
+          fi
+
+          IMAGE_URL="https://raw.githubusercontent.com/${{ github.repository }}/${SHOTS_BRANCH}/${TARGET_FILE}?ts=$(date +%s)"
+          echo "image_url=${IMAGE_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Add PR comment with embedded screenshot
+        uses: actions/github-script@v7
+        env:
+          IMAGE_URL: ${{ steps.publish.outputs.image_url }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const imageUrl = process.env.IMAGE_URL;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const body = [
+              '<!-- pr-screenshot-comment -->',
+              '📸 Automated screenshot generated for this PR.',
+              '',
+              `![PR screenshot](${imageUrl})`,
+              '',
+              `Direct image URL: ${imageUrl}`,
+              `Workflow run: ${runUrl}`
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes('<!-- pr-screenshot-comment -->')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
