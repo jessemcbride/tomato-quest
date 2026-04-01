@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>TomatoQuest</title>
+<title>Daily Expedition</title>
 <meta name="theme-color" content="#6eb047">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="app-icon.svg" type="image/svg+xml">
@@ -333,7 +333,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
 <!-- CREATION -->
 <div id="creationScreen">
 <div class="cw">
-  <span class="c-logo">🍅 Tomato<span>Quest</span></span>
+  <span class="c-logo">🧭 Daily<span>Expedition</span></span>
   <div class="c-sub">A NEW HERO AWAKENS</div>
   <div class="pdots"><div class="pdot active" id="d0"></div><div class="pdot" id="d1"></div><div class="pdot" id="d2"></div><div class="pdot" id="d3"></div></div>
 
@@ -356,7 +356,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
           <div class="sel-check">✓</div>
           <div class="cc-sprite" id="cc-spr-knight"></div>
           <div class="cc-name">KNIGHT</div><div class="cc-tag">WARRIOR</div>
-          <div class="cc-desc">Unyielding. Charges into focus head-on.</div>
+          <div class="cc-desc">Unyielding. Breaks through hazards head-on.</div>
           <div class="cc-bonus">+30% BOSS DAMAGE</div>
         </div>
         <div class="cc mage" onclick="selClass('mage')" id="ck-mage">
@@ -370,7 +370,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
           <div class="sel-check">✓</div>
           <div class="cc-sprite" id="cc-spr-ranger"></div>
           <div class="cc-name">RANGER</div><div class="cc-tag">EXPLORER</div>
-          <div class="cc-desc">Finds fortune on every road walked.</div>
+          <div class="cc-desc">Finds fortune on every route segment cleared.</div>
           <div class="cc-bonus">+40% GOLD &amp; MAP REWARDS</div>
         </div>
         <div class="cc paladin" onclick="selClass('paladin')" id="ck-paladin">
@@ -398,7 +398,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
       </div>
       <div class="cust-opts">
         <div class="cust-sec">
-          <div class="cust-sec-lbl">🍅 TOMATO SHADE</div>
+          <div class="cust-sec-lbl">🎨 SUIT COLOR</div>
           <div class="cust-row" id="custColors"></div>
         </div>
         <div class="cust-sec">
@@ -485,7 +485,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
 <!-- MAIN APP -->
 <div class="app hidden" id="mainApp">
   <header>
-    <div class="logo">🍅 Tomato<span>Quest</span></div>
+    <div class="logo">🧭 Daily<span>Expedition</span></div>
     <div class="hdr-r">
       <button class="hbtn" id="featsBtn" onclick="openFeats()">🏆 FEATS <span class="badge" id="featsBadge">0</span></button>
       <button class="hbtn" onclick="openSet()">⚙</button>
@@ -499,9 +499,9 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
     <div class="main-area">
       <div class="tab-bar">
         <button class="tbtn tch" onclick="swTab('char')">👤 HERO</button>
-        <button class="tbtn tq act" onclick="swTab('quest')">📜 QUEST</button>
-        <button class="tbtn tm" onclick="swTab('map')">🗺 MAP</button>
-        <button class="tbtn tsh" onclick="swTab('shop')">🛒 SHOP</button>
+        <button class="tbtn tq act" onclick="swTab('quest')">📜 MISSION</button>
+        <button class="tbtn tm" onclick="swTab('map')">🗺 ROUTE</button>
+        <button class="tbtn tsh" onclick="swTab('shop')">🎒 SUPPLY</button>
       </div>
 
       <div class="tc" id="tc-char">
@@ -546,12 +546,12 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
             <div class="sp gb">
               <div class="ptitle"><div class="pdot" style="background:var(--gold)"></div> STATS</div>
               <div class="sgrid">
-                <div class="ssl">🍅 Sessions</div><div style="color:var(--tomato2)" id="sP">0</div>
-                <div class="ssl">⏱ Focus time</div><div style="color:var(--blue)" id="sM">0 min</div>
+                <div class="ssl">🧭 Expeditions</div><div style="color:var(--tomato2)" id="sP">0</div>
+                <div class="ssl">⏱ Field time</div><div style="color:var(--blue)" id="sM">0 min</div>
                 <div class="ssl">🐉 Bosses slain</div><div style="color:var(--hp)" id="sB">0</div>
                 <div class="ssl">🏆 Feats earned</div><div style="color:var(--purple)" id="sA">0</div>
                 <div class="ssl">🪙 Gold spent</div><div style="color:var(--gold)" id="sGs">0</div>
-                <div class="ssl">🗺 Roads walked</div><div style="color:var(--green)" id="sR">0</div>
+                <div class="ssl">🗺 Routes cleared</div><div style="color:var(--green)" id="sR">0</div>
               </div>
             </div>
           </div>
@@ -562,16 +562,16 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
       <div class="tc act" id="tc-quest">
         <div class="qb">
           <div class="qi">📜</div>
-          <div class="qinfo"><div class="qt">ACTIVE QUEST</div><div class="qdesc" id="qDesc">Complete 4 focus sessions</div></div>
+          <div class="qinfo"><div class="qt">ACTIVE MISSION</div><div class="qdesc" id="qDesc">Complete 2 expedition turns today</div></div>
           <div class="qr">+200 XP<br>+50 🪙</div>
         </div>
         <div class="timer-box">
           <div class="mtabs">
-            <button class="mtab act" onclick="setMode('focus',25,'h')">⚔ FOCUS (25m)</button>
-            <button class="mtab" onclick="setMode('short',5,'c')">🛡 SHORT REST</button>
-            <button class="mtab" onclick="setMode('long',15,'c')">🏰 LONG REST</button>
+            <button class="mtab act" onclick="setMode('focus',25,'h')">🧭 EXPEDITION (25m)</button>
+            <button class="mtab" onclick="setMode('short',5,'c')">🧰 QUICK CAMP</button>
+            <button class="mtab" onclick="setMode('long',15,'c')">🏕 FULL CAMP</button>
           </div>
-          <input class="task-inp" id="taskI" placeholder="What are you working on?" maxlength="50">
+          <input class="task-inp" id="taskI" placeholder="What is today's expedition objective?" maxlength="50">
           <div class="ring-wrap">
             <div class="ring-bg"></div>
             <svg style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)">
@@ -581,8 +581,8 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
             </svg>
             <div class="ring-ctr">
               <div class="tdisp" id="tDisp">25:00</div>
-              <div class="plbl">SESSION</div>
-              <div class="pips" id="pips"><span class="pip">🍅</span><span class="pip">🍅</span><span class="pip">🍅</span><span class="pip">🍅</span></div>
+              <div class="plbl">TURN</div>
+              <div class="pips" id="pips"><span class="pip">🧭</span><span class="pip">🧭</span><span class="pip">🧭</span><span class="pip">🧭</span></div>
             </div>
           </div>
           <div class="brow">
@@ -596,21 +596,21 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
       <!-- MAP TAB -->
       <div class="tc" id="tc-map">
         <div class="mprow">
-          <div class="mplbl" id="mapBiome">THE FOGWOOD</div>
+          <div class="mplbl" id="mapBiome">THE FRONTIER BELT</div>
           <div class="mptrack"><div class="mpfill" id="mpFill" style="width:0%"></div></div>
           <div class="mpcnt" id="mpCnt">0 / 8</div>
         </div>
         <div class="mcwrap"><canvas id="mapCanvas"></canvas></div>
-        <div class="mleg"><span id="heroLeg">🍅 You</span><span>📦 Chest</span><span>⚔ Battle</span><span>🏪 Merchant</span><span>📖 Lore</span><span>💤 Rest</span><span>👑 Boss</span></div>
+        <div class="mleg"><span id="heroLeg">🧭 Team</span><span>📦 Cache</span><span>⚔ Hazard</span><span>🏪 Trader</span><span>📖 Intel</span><span>💤 Camp</span><span>👑 Crisis</span></div>
         <div class="meb" id="meb">
-          <div class="met" id="metT" style="color:var(--text2)">COMPLETE A FOCUS SESSION TO MOVE FORWARD</div>
-          <div class="mebody" id="mebB">Each pomodoro advances your hero one step. New encounters await!</div>
+          <div class="met" id="metT" style="color:var(--text2)">COMPLETE AN EXPEDITION TURN TO ADVANCE</div>
+          <div class="mebody" id="mebB">Each completed turn advances your team one segment. New encounters await!</div>
         </div>
       </div>
 
       <!-- SHOP TAB -->
       <div class="tc" id="tc-shop">
-        <div class="shop-gold">🪙 <span id="shopGold">0</span> Gold available</div>
+        <div class="shop-gold">🪙 <span id="shopGold">0</span> Supply budget available</div>
         <div class="shop-grid" id="shopGrid"></div>
       </div>
 
@@ -632,18 +632,18 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
         <div class="bt boss"><div class="bf bf-hp" id="bHpB" style="width:100%"></div></div>
       </div>
     </div>
-    <div class="bmeta"><div class="bdesc">⚔ Each focus session deals damage!</div><div class="rdmg" id="rdmg">Last hit: <span>—</span></div></div>
+    <div class="bmeta"><div class="bdesc">⚔ Each expedition turn deals damage!</div><div class="rdmg" id="rdmg">Last hit: <span>—</span></div></div>
   </div>
 
   <div class="bg2">
     <div class="sp">
-      <div class="ptitle"><div class="pdot" style="background:var(--tomato)"></div> SESSION LOG</div>
-      <div class="hlist" id="hList"><div style="color:var(--text2);font-size:.8rem;padding:5px">No sessions yet!</div></div>
+      <div class="ptitle"><div class="pdot" style="background:var(--tomato)"></div> EXPEDITION LOG</div>
+      <div class="hlist" id="hList"><div style="color:var(--text2);font-size:.8rem;padding:5px">No turns logged yet!</div></div>
     </div>
   </div>
 
   <footer>
-    <div>🍅<span style="color:var(--tomato2)" id="fP">0</span> today</div>
+    <div>🧭<span style="color:var(--tomato2)" id="fP">0</span> turns today</div>
     <div class="sbadge">🔥<span id="fS">0</span>-DAY STREAK</div>
     <div>LVL<span style="color:var(--purple)" id="fL">1</span> <span id="fCls">Knight</span></div>
   </footer>
@@ -655,24 +655,24 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
 ══════════════════════════════════════════ */
 const BASE_BOSS_DAMAGE=250;
 const BOSSES=[
-  {n:'DISTRACTION DRAGON',e:'🐉',poms:4},
-  {n:'PROCRASTINATION LICH',e:'💀',poms:5},
-  {n:'DOOM SCROLLING HYDRA',e:'🐍',poms:6},
-  {n:'MEETING MONSTER',e:'👾',poms:7},
-  {n:'NOTIFICATION WRAITH',e:'👻',poms:8},
-  {n:'BURNOUT BASILISK',e:'🦎',poms:9},
+  {n:'CANYON STORMFRONT',e:'⛈',poms:4},
+  {n:'RAIDER WARBAND',e:'⚔',poms:5},
+  {n:'WHITEOUT BLIZZARD',e:'🌨',poms:6},
+  {n:'SINKHOLE SWARM',e:'🕳',poms:7},
+  {n:'DUNE LIGHTNING',e:'🌩',poms:8},
+  {n:'BLACK RIDGE COLLAPSE',e:'🪨',poms:9},
 ];
 function bossMaxHp(idx){
   const b=BOSSES[idx]||BOSSES[0];
   return b.poms*BASE_BOSS_DAMAGE;
 }
 const QUESTS=[
-  'Slay the Distraction Dragon with 4 focus sessions',
-  "The Scholar's Trial — earn 300 XP today",
-  'Forge the Iron Tome — 3 sessions on one task',
-  'The Endless March — maintain a 3-day streak',
-  'Land the killing blow on the Procrastination Lich',
-  'Reach Level 5 — prove your worth',
+  'Cross 2 route segments with no failed turns',
+  'Log 300 XP from clean expedition decisions today',
+  'Finish 3 turns with the same objective',
+  'Keep your expedition streak alive for 3 days',
+  'Resolve the Raider Warband crisis this week',
+  'Reach Level 5 and unlock specialist prep',
 ];
 const CLS={
   knight:{name:'Knight',sprite:'knight',color:'var(--hp)',tag:'WARRIOR',hp:110,mp:50,bossMult:1.3,xpMult:1.0,goldMult:1.0,bonus:'⚔ +30% boss damage',skills:['IRON CHARGE','SHIELD BASH','BATTLE CRY','LAST STAND','WAR HYMN','BERSERKER']},
@@ -681,11 +681,11 @@ const CLS={
   paladin:{name:'Paladin',sprite:'paladin',color:'var(--gold)',tag:'GUARDIAN',hp:135,mp:60,bossMult:1.0,xpMult:1.0,goldMult:1.0,bonus:'❤ +25 HP & stronger heals',skills:['HOLY LIGHT','DIVINE SHIELD','SACRED OATH','RESTORATION','AURA OF WILL','JUDGMENT']},
 };
 const BIOMES=[
-  {name:'THE FOGWOOD',sky:'#080d14',gr:'#0d1a0a',rd:'#1a2a14',tr:'🌲',ac:'#2d4a20'},
-  {name:'EMBER WASTES',sky:'#140808',gr:'#1a0d08',rd:'#2a1a08',tr:'🌋',ac:'#4a2010'},
-  {name:'CRYSTAL PEAKS',sky:'#08080d',gr:'#0d0d1a',rd:'#141428',tr:'⛰',ac:'#202040'},
-  {name:'SUNDRIFT PLAINS',sky:'#0d0d08',gr:'#141408',rd:'#201e0a',tr:'🌾',ac:'#2a2a10'},
-  {name:'HAUNTED MOOR',sky:'#0a080f',gr:'#100810',rd:'#180a18',tr:'🕸',ac:'#200020'},
+  {name:'FRONTIER BELT',sky:'#080d14',gr:'#0d1a0a',rd:'#1a2a14',tr:'🌲',ac:'#2d4a20'},
+  {name:'BURNSCAR PASS',sky:'#140808',gr:'#1a0d08',rd:'#2a1a08',tr:'🌋',ac:'#4a2010'},
+  {name:'FROSTGLASS RANGE',sky:'#08080d',gr:'#0d0d1a',rd:'#141428',tr:'⛰',ac:'#202040'},
+  {name:'SUNDRIFT BASIN',sky:'#0d0d08',gr:'#141408',rd:'#201e0a',tr:'🌾',ac:'#2a2a10'},
+  {name:'ASHEN LOWLAND',sky:'#0a080f',gr:'#100810',rd:'#180a18',tr:'🕸',ac:'#200020'},
 ];
 const EP=['chest','battle','merchant','lore','rest'];
 
@@ -693,33 +693,33 @@ const EP=['chest','battle','merchant','lore','rest'];
    SHOP ITEMS
 ══════════════════════════════════════════ */
 const SHOP_ITEMS=[
-  {id:'xp_potion',  name:'FOCUS ELIXIR',  icon:'⚗',cost:40, desc:'Next session earns 2× XP', effect:'xp2x', duration:1},
-  {id:'gold_charm', name:'LUCKY CHARM',   icon:'🍀',cost:30, desc:'Next session drops 2× gold',effect:'gold2x',duration:1},
-  {id:'dmg_rune',   name:'WAR RUNE',      icon:'🔥',cost:50, desc:'Next boss hit deals 3× damage',effect:'dmg3x',duration:1},
-  {id:'heal_herb',  name:'HEALING HERB',  icon:'🌿',cost:25, desc:'Restore 30 HP instantly',    effect:'heal30',duration:0},
-  {id:'xp_tome',    name:'ARCANE TOME',   icon:'📚',cost:80, desc:'Instantly gain 150 XP',      effect:'xp150', duration:0},
-  {id:'mp_crystal', name:'MANA CRYSTAL',  icon:'💎',cost:35, desc:'Restore full MP',            effect:'fullmp', duration:0},
+  {id:'xp_potion',  name:'SCOUT BRIEFING', icon:'🗒',cost:40, desc:'Next turn earns 2× XP', effect:'xp2x', duration:1},
+  {id:'gold_charm', name:'SUPPLY TOKEN',   icon:'🎟',cost:30, desc:'Next turn grants 2× gold',effect:'gold2x',duration:1},
+  {id:'dmg_rune',   name:'BREACH CHARGE',  icon:'🧨',cost:50, desc:'Next crisis hit deals 3× damage',effect:'dmg3x',duration:1},
+  {id:'heal_herb',  name:'FIELD MEDKIT',   icon:'🩹',cost:25, desc:'Restore 30 HP instantly', effect:'heal30',duration:0},
+  {id:'xp_tome',    name:'TACTICAL DOSSIER',icon:'📚',cost:80, desc:'Instantly gain 150 XP', effect:'xp150', duration:0},
+  {id:'mp_crystal', name:'POWER CELL',     icon:'🔋',cost:35, desc:'Restore full MP', effect:'fullmp', duration:0},
 ];
 
 /* ══════════════════════════════════════════
    ACHIEVEMENTS
 ══════════════════════════════════════════ */
 const ACHIEVEMENTS=[
-  {id:'first_blood',   name:'FIRST BLOOD',     icon:'🍅', desc:'Complete your very first focus session',   check:G=>G.totalPoms>=1},
-  {id:'pom5',          name:'FIVE A DAY',       icon:'🍅', desc:'Complete 5 focus sessions in a single day',check:G=>G.todayPoms>=5},
-  {id:'pom25',         name:'TOMATO VETERAN',   icon:'🏅', desc:'Complete 25 focus sessions total',         check:G=>G.totalPoms>=25},
-  {id:'pom100',        name:'CENTURION',        icon:'💯', desc:'Complete 100 focus sessions total',        check:G=>G.totalPoms>=100},
+  {id:'first_blood',   name:'FIRST STEP',      icon:'🧭', desc:'Complete your very first expedition turn',    check:G=>G.totalPoms>=1},
+  {id:'pom5',          name:'FIVE TURNS',      icon:'🧭', desc:'Complete 5 expedition turns in a single day', check:G=>G.todayPoms>=5},
+  {id:'pom25',         name:'PATH VETERAN',    icon:'🏅', desc:'Complete 25 expedition turns total',          check:G=>G.totalPoms>=25},
+  {id:'pom100',        name:'CENTURION',       icon:'💯', desc:'Complete 100 expedition turns total',         check:G=>G.totalPoms>=100},
   {id:'streak3',       name:'HAT TRICK',        icon:'🔥', desc:'Maintain a 3-day streak',                  check:G=>G.streak>=3},
   {id:'streak7',       name:'WEEK WARRIOR',     icon:'🗓', desc:'Maintain a 7-day streak',                  check:G=>G.streak>=7},
-  {id:'boss1',         name:'DRAGON SLAYER',    icon:'🐉', desc:'Slay your first boss',                     check:G=>G.bossesSlain>=1},
-  {id:'boss5',         name:'MONSTER HUNTER',   icon:'⚔', desc:'Slay 5 bosses',                            check:G=>G.bossesSlain>=5},
+  {id:'boss1',         name:'CRISIS SOLVER',   icon:'⛈', desc:'Resolve your first major crisis',           check:G=>G.bossesSlain>=1},
+  {id:'boss5',         name:'FRONTIER WARDEN', icon:'⚔', desc:'Resolve 5 major crises',                   check:G=>G.bossesSlain>=5},
   {id:'lv5',           name:'RISING HERO',      icon:'⬆', desc:'Reach Level 5',                            check:G=>G.level>=5},
   {id:'lv10',          name:'LEGEND',           icon:'👑', desc:'Reach Level 10',                           check:G=>G.level>=10},
   {id:'gold500',       name:'COIN HOARDER',     icon:'🪙', desc:'Accumulate 500 gold total',                check:G=>G.totalGoldEarned>=500},
-  {id:'road7',         name:'LONG ROAD',        icon:'🗺', desc:'Complete 7 daily roads',                   check:G=>G.roadsCompleted>=7},
-  {id:'hour1',         name:'FOCUSED HOUR',     icon:'⏱', desc:'Accumulate 60 minutes of focus time',     check:G=>G.totalMins>=60},
-  {id:'hour10',        name:'DEEP WORKER',      icon:'🧘', desc:'Accumulate 10 hours of focus time',       check:G=>G.totalMins>=600},
-  {id:'shop1',         name:'SHOPKEEPER\'S PAL',icon:'🛒', desc:'Buy your first item from the shop',        check:G=>G.goldSpent>=1},
+  {id:'road7',         name:'LONG HAUL',       icon:'🗺', desc:'Complete 7 daily routes',                  check:G=>G.roadsCompleted>=7},
+  {id:'hour1',         name:'FIELD HOUR',      icon:'⏱', desc:'Accumulate 60 minutes of expedition time', check:G=>G.totalMins>=60},
+  {id:'hour10',        name:'SEASONED SCOUT',  icon:'🧭', desc:'Accumulate 10 hours of expedition time',   check:G=>G.totalMins>=600},
+  {id:'shop1',         name:'QUARTERMASTER',   icon:'🎒', desc:'Buy your first supply item',               check:G=>G.goldSpent>=1},
 ];
 
 /* ══════════════════════════════════════════
@@ -817,7 +817,7 @@ function sfx(t){try{const ac=gAC();if(ac.state==='suspended')ac.resume();const g
 /* ══════════════════════════════════════════
    STORAGE
 ══════════════════════════════════════════ */
-const LK='tomatoquest_v5';
+const LK='daily_expedition_v1';
 function defs(){return{
   heroName:'',heroClass:'',tomColor:0,tomEye:0,
   level:1,xp:0,xpMax:200,hp:100,hpMax:100,mp:50,mpMax:80,
@@ -880,9 +880,9 @@ function updateNotifBtn(){
   btn.style.borderColor=perm==='granted'?'var(--green)':perm==='denied'?'var(--hp)':'';
   btn.style.color=perm==='granted'?'var(--green)':perm==='denied'?'var(--hp)':'';
 }
-function sendNotif(title,body,icon='🍅'){
+function sendNotif(title,body,icon='🧭'){
   if(!('Notification' in window)||Notification.permission!=='granted')return;
-  try{new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>',silent:false})}catch(e){}
+  try{new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 >🧭</text></svg>',silent:false})}catch(e){}
 }
 function showBanner(msg,type=''){
   const el=document.createElement('div');
@@ -945,7 +945,7 @@ function buyItem(id){
   // Apply effect
   if(item.duration>0){
     addBuff(item.effect,item.duration);
-    showBanner(`${item.icon} ${item.name} activated! (${item.duration} session${item.duration>1?'s':''})`,'');
+    showBanner(`${item.icon} ${item.name} activated! (${item.duration} turn${item.duration>1?'s':''})`,'');
   } else {
     if(item.effect==='heal30'){const hp=Math.min(G.hpMax,G.hp+30);save({hp});showBanner('🌿 Restored 30 HP!','')}
     else if(item.effect==='xp150'){gainXP(150);showBanner('📚 +150 XP!','')}
@@ -1001,10 +1001,10 @@ function renderAchievements(){
     if(!done){
       if(a.id.startsWith('pom'))prog=`${G.totalPoms} / ${a.check.toString().match(/>=(\d+)/)?.[1]||'?'}`;
       else if(a.id.startsWith('streak'))prog=`${G.streak} day streak`;
-      else if(a.id.startsWith('boss'))prog=`${G.bossesSlain} slain`;
+      else if(a.id.startsWith('boss'))prog=`${G.bossesSlain} crises resolved`;
       else if(a.id.startsWith('lv'))prog=`Level ${G.level}`;
       else if(a.id==='gold500')prog=`${G.totalGoldEarned||0} gold earned`;
-      else if(a.id==='road7')prog=`${G.roadsCompleted||0} roads`;
+      else if(a.id==='road7')prog=`${G.roadsCompleted||0} routes`;
       else if(a.id.startsWith('hour'))prog=`${G.totalMins} min`;
       else if(a.id==='shop1')prog=`${G.goldSpent||0} gold spent`;
       else if(a.id==='pom5')prog=`${G.todayPoms} today`;
@@ -1110,7 +1110,7 @@ function initApp(){
   document.getElementById('charCl').style.color=c.color;
   document.getElementById('clsBonus').textContent=c.bonus;
   document.getElementById('clsBonus').style.color=c.color;
-  document.getElementById('heroLeg').innerHTML='🍅 You';
+  document.getElementById('heroLeg').innerHTML='🧭 Team';
   document.getElementById('fCls').textContent=c.name;
   document.getElementById('setNm').textContent=G.heroName;
   document.getElementById('setCls').textContent=c.name;
@@ -1121,7 +1121,7 @@ function initApp(){
   if(G.musicOn){const f=()=>{startMus();document.removeEventListener('click',f)};document.addEventListener('click',f,{once:true})}
 }
 
-// Render class card tomatos
+// Render class card avatars
 ['knight','mage','ranger','paladin'].forEach((cls,i)=>{
   const el=document.getElementById('cc-spr-'+cls);
   if(el)el.innerHTML=tomatoSVG(cls,i%TOM_COLORS.length,0,52);
@@ -1163,34 +1163,34 @@ function genMap(s){
 function getMap(){const{bi,ns}=genMap(G.mapSeed);ns.forEach((n,i)=>{if(G.mapClaimed.includes(i))n.claimed=true});return{bi,ns}}
 
 const CHEST_R=[
-  {title:'ANCIENT TOME',body:'Hidden beneath gnarled roots, a tome hums with arcane energy.',xp:80,gold:20,icon:'📦'},
-  {title:'FORGOTTEN CACHE',body:'A rusted lockbox — gold coins and a dried sprig of courage-herb.',xp:40,gold:45,icon:'🔒'},
-  {title:"HERO'S TROVE",body:'"For whoever walks this road with purpose," reads the note.',xp:100,gold:30,icon:'⚔'},
-  {title:'GLOWING ORB',body:'It pulses with strange light. XP flows through your veins like warm fire.',xp:120,gold:10,icon:'🔮'},
+  {title:'BURIED CACHE',body:'A sealed expedition crate survives under broken stone.',xp:80,gold:20,icon:'📦'},
+  {title:'EMERGENCY SUPPLIES',body:'A forgotten lockbox still holds rations and field credits.',xp:40,gold:45,icon:'🔒'},
+  {title:'FORWARD TEAM CRATE',body:'A stamped note reads: "For the next crew that keeps moving."',xp:100,gold:30,icon:'🧰'},
+  {title:'SIGNAL CORE',body:'A humming beacon core syncs your squad and sharpens decisions.',xp:120,gold:10,icon:'📡'},
 ];
 const BATTLE_R=[
-  {title:'AMBUSH!',body:'A Shadow Sprite leaps from the fog! You dispatch it with a precise strike.',xp:70,gold:15,icon:'⚔'},
-  {title:'ROAD BANDIT',body:'A grizzled bandit steps onto the path. One firm glare and they reconsider.',xp:50,gold:25,icon:'🗡'},
-  {title:'CURSED ARMOUR',body:'An empty suit of armour animates! You smash its visor — the curse shatters.',xp:90,gold:20,icon:'🛡'},
-  {title:'WILD SLIME',body:'A gelatinous cube blocks the road. You sidestep it elegantly.',xp:40,gold:12,icon:'🟢'},
+  {title:'RAIDER AMBUSH',body:'A raider squad springs from cover. You break contact cleanly.',xp:70,gold:15,icon:'⚔'},
+  {title:'BLOCKADE TEAM',body:'An armed checkpoint demands your cargo. You outmaneuver them.',xp:50,gold:25,icon:'🚧'},
+  {title:'AUTONOMOUS DRONE',body:'A rogue sentry locks on. You disable it before alarms spread.',xp:90,gold:20,icon:'🛡'},
+  {title:'SINKHOLE EDGE',body:'Terrain gives way beneath you. Quick footing saves the convoy.',xp:40,gold:12,icon:'🕳'},
 ];
 const MERCH_R=[
-  {title:'WANDERING MERCHANT',body:'"Ah, a traveller! I have rare wares today." He winks.',xp:30,gold:35,icon:'🏪'},
-  {title:'THE ALCHEMIST',body:'"One vial of Focus Elixir, no charge. Go save the world."',xp:50,gold:20,icon:'⚗'},
-  {title:"CARTOGRAPHER'S CAMP",body:'"The journey itself is the treasure," she says.',xp:60,gold:15,icon:'🗺'},
+  {title:'FRINGE TRADER',body:'A convoy trader offers discounted route essentials.',xp:30,gold:35,icon:'🏪'},
+  {title:'FIELD TECH',body:'"Take this kit. Bring everyone back in one piece."',xp:50,gold:20,icon:'🧰'},
+  {title:"PATHFINDER CAMP",body:'A surveyor shares fresh route notes and hazard intel.',xp:60,gold:15,icon:'🗺'},
 ];
 const LORE_R=[
-  {title:'STONE INSCRIPTION',body:'"Here stood the Order of the Focused Flame. One hour of deep work moves mountains."',xp:45,gold:8,icon:'📜'},
-  {title:'CRUMBLING SHRINE',body:'A shrine to St. Pomodoro, patron of the uninterrupted.',xp:50,gold:5,icon:'🏛'},
-  {title:'OLD JOURNAL PAGE',body:'"Day 47. I stopped checking messages in the morning hours. Everything changed."',xp:55,gold:6,icon:'📖'},
-  {title:'RUNIC MONOLITH',body:'"Flow state was sacred. They called it the Groove."',xp:60,gold:4,icon:'🗿'},
-  {title:"TRAVELLER'S TREE",body:'Names carved into bark — every one who walked this road before you.',xp:40,gold:10,icon:'🌳'},
-  {title:'ECHOING WELL',body:'"Focus is not absence of noise. It is presence of purpose."',xp:65,gold:0,icon:'🪣'},
+  {title:'MISSION TRANSCRIPT',body:'A prior team logged the safest crossing windows at dawn.',xp:45,gold:8,icon:'📜'},
+  {title:'MEMORIAL OUTPOST',body:'The wall lists crews who cleared this corridor before you.',xp:50,gold:5,icon:'🏛'},
+  {title:'RECOVERY LOG',body:'"Day 47: conserve fuel early, save medkits for storm nights."',xp:55,gold:6,icon:'📖'},
+  {title:'NAV MARKER',body:'A beacon inscription outlines three fallback routes.',xp:60,gold:4,icon:'🗿'},
+  {title:"WAYFARER SIGNPOST",body:'Every carved name marks a team that made it through.',xp:40,gold:10,icon:'🌳'},
+  {title:'RADIO ECHO',body:'"Discipline is choosing your next move before panic chooses it."',xp:65,gold:0,icon:'📻'},
 ];
 const REST_R=[
-  {title:'ROADSIDE INN',body:'"Sit, weary hero." The innkeeper slides over a bowl of stew.',xp:20,gold:5,icon:'🏠',hp:20},
-  {title:'HEALING SPRING',body:'Cool water glows faintly blue. Wounds close.',xp:15,gold:0,icon:'💧',hp:30},
-  {title:'CAMPFIRE',body:'Someone left a fire burning. You rest, watching embers drift upward.',xp:25,gold:8,icon:'🔥',hp:15},
+  {title:'SAFEHOUSE',body:'A sheltered room lets the team patch up and breathe.',xp:20,gold:5,icon:'🏠',hp:20},
+  {title:'MED STATION',body:'Sterile supplies and clean water stabilize everyone quickly.',xp:15,gold:0,icon:'💧',hp:30},
+  {title:'FIELD CAMP',body:'You regroup around a portable heater and revise tomorrow’s route.',xp:25,gold:8,icon:'🔥',hp:15},
 ];
 function getEvContent(type,r){
   const pool={chest:CHEST_R,battle:BATTLE_R,merchant:MERCH_R,lore:LORE_R,rest:REST_R};
@@ -1278,7 +1278,7 @@ function drawMap(){
   const tX=nSp*(Math.min(G.mapStep,MS-1)+1);
   if(heroX===0)heroX=nSp/2;heroX+=(tX-heroX)*.12;
   ctx.globalAlpha=.3;ctx.font='7px serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='#000';ctx.fillText('⬤',heroX,nY+13);ctx.globalAlpha=1;
-  // Draw tomato hero
+  // Draw expedition hero
   const img=getMapHeroImage();
   if(img&&img.complete&&img.naturalWidth>0){
     try{ctx.drawImage(img,heroX-12,nY-22,24,24)}catch(e){}
@@ -1296,22 +1296,22 @@ function updateMapUI(){
   document.getElementById('mpCnt').textContent=G.mapStep+' / '+MS;
   document.getElementById('mpFill').style.width=(G.mapStep/MS*100)+'%';
   if(G.mapStep>=MS){
-    document.getElementById('metT').textContent='🏁 ROAD COMPLETE!';
+    document.getElementById('metT').textContent='🏁 ROUTE COMPLETE!';
     document.getElementById('metT').style.color='var(--green)';
-    document.getElementById('mebB').textContent='You have walked today\'s entire road. A new one awaits tomorrow.';
+    document.getElementById('mebB').textContent='You cleared today’s full route. A new path opens tomorrow.';
     return;
   }
   const node=ns[G.mapStep];if(!node)return;
   const box=document.getElementById('meb');
   const colors={chest:'chest',battle:'battle',merchant:'merchant',lore:'lore',rest:'rest',boss:'boss'};
-  const labels={chest:'📦 TREASURE CHEST',battle:'⚔ ENCOUNTER',merchant:'🏪 MERCHANT',lore:'📖 LORE FOUND',rest:'💤 REST SITE',boss:'👑 BOSS NODE'};
+  const labels={chest:'📦 SUPPLY CACHE',battle:'⚔ HAZARD EVENT',merchant:'🏪 TRADER STOP',lore:'📖 INTEL FOUND',rest:'💤 CAMP SITE',boss:'👑 CRISIS NODE'};
   box.className='meb '+(colors[node.type]||'');
   const te=document.getElementById('metT');te.textContent=labels[node.type]||'';te.style.color='';
-  if(node.claimed)document.getElementById('mebB').textContent='Already claimed. Keep completing sessions!';
-  else if(G.mapStep===0&&G.todayPoms===0)document.getElementById('mebB').textContent='Complete a focus session to reach the first node!';
+  if(node.claimed)document.getElementById('mebB').textContent='Already claimed. Keep completing turns!';
+  else if(G.mapStep===0&&G.todayPoms===0)document.getElementById('mebB').textContent='Complete an expedition turn to reach the first node!';
   else{
     const r=sRng(G.mapSeed+G.mapStep*7),content=getEvContent(node.type,r);
-    document.getElementById('mebB').textContent=node.type==='boss'?'The road ends here — at a mighty guardian!':content?content.body:'';
+    document.getElementById('mebB').textContent=node.type==='boss'?'This route ends in a major frontier crisis. Prepare carefully.':content?content.body:'';
   }
 }
 
@@ -1402,7 +1402,7 @@ function onDone(){
   if(T.mode!=='focus')return;
   sfx('done');
   // Browser notification
-  sendNotif('🍅 Session Complete!','Time for a break, hero. You earned it.');
+  sendNotif('🧭 Turn Complete!','Camp break available. Solid progress today.');
   // Also play alarm sound
   sfx('alarm');
 
@@ -1475,7 +1475,7 @@ function updateBossUI(){
   document.getElementById('bHpV').textContent=G.bossHp.toLocaleString();
   document.getElementById('bHpM').textContent=G.bossHpMax.toLocaleString();
   document.getElementById('bHpB').style.width=(G.bossHp/G.bossHpMax*100)+'%';
-  document.getElementById('rdmg').innerHTML='Last hit: <span>'+(G.lastBossHit||0)+' dmg</span> • Target: '+b.poms+' focus sessions';
+  document.getElementById('rdmg').innerHTML='Last hit: <span>'+(G.lastBossHit||0)+' dmg</span> • Target: '+b.poms+' turns';
 }
 
 /* ══════════════════════════════════════════
@@ -1488,7 +1488,7 @@ function addHist(task,xp){
 }
 function renderHist(){
   const el=document.getElementById('hList');
-  if(!G.history.length){el.innerHTML='<div style="color:var(--text2);font-size:.8rem;padding:5px">No sessions yet!</div>';return}
+  if(!G.history.length){el.innerHTML='<div style="color:var(--text2);font-size:.8rem;padding:5px">No turns logged yet!</div>';return}
   el.innerHTML=G.history.map(h=>`<div class="hi"><span class="ht">${h.time}</span><span class="hk">${h.task}</span><span class="hx">+${h.xp}XP</span></div>`).join('');
 }
 function updatePips(p){document.querySelectorAll('.pip').forEach((x,i)=>x.classList.toggle('done',i<p))}
