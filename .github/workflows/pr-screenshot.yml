@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           npm install --no-package-lock --no-save playwright
           npx playwright install --with-deps chromium
 
-      - name: Capture screenshots relevant to PR changes
+      - name: Capture navigated UI screenshots
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -55,7 +55,6 @@ jobs:
 
           for (const line of diff.split('\n')) {
             if (!line.startsWith('+') || line.startsWith('+++')) continue;
-
             let match;
             while ((match = idRegex.exec(line)) !== null) changedSelectors.add(`#${match[1]}`);
             while ((match = classRegex.exec(line)) !== null) {
@@ -64,15 +63,47 @@ jobs:
             }
           }
 
-          const selectors = [...changedSelectors].slice(0, 3);
+          const selectors = [...changedSelectors].slice(0, 4);
           fs.writeFileSync('pr-screenshots/targets.txt', selectors.join('\n'));
 
           (async () => {
             const browser = await chromium.launch();
-            const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
+            const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
             await page.goto('http://127.0.0.1:4173/index.html', { waitUntil: 'networkidle' });
 
-            await page.screenshot({ path: 'pr-screenshots/full-page.jpg', type: 'jpeg', quality: 35 });
+            await page.screenshot({ path: 'pr-screenshots/00-creation.jpg', type: 'jpeg', quality: 70 });
+
+            if (await page.locator('#creationScreen:not(.hidden)').count()) {
+              await page.locator('.name-field').first().fill('PR Bot');
+              await page.locator('.btn-p').first().click();
+              if (await page.locator('.cc').first().count()) {
+                await page.locator('.cc').first().click();
+              }
+              if (await page.locator('.btn-p').first().count()) await page.locator('.btn-p').first().click();
+              if (await page.locator('.btn-p').first().count()) await page.locator('.btn-p').first().click();
+              if (await page.locator('.btn-g, .btn-p').first().count()) await page.locator('.btn-g, .btn-p').first().click();
+            }
+
+            await page.evaluate(() => {
+              const creation = document.querySelector('#creationScreen');
+              const app = document.querySelector('.app');
+              if (creation) creation.classList.add('hidden');
+              if (app) app.classList.remove('hidden');
+            });
+
+            await page.waitForTimeout(300);
+            await page.screenshot({ path: 'pr-screenshots/01-main.jpg', type: 'jpeg', quality: 70 });
+
+            const tabs = page.locator('.tbtn');
+            const tabCount = await tabs.count();
+            for (let i = 0; i < tabCount; i += 1) {
+              const tab = tabs.nth(i);
+              const rawName = ((await tab.innerText()) || `tab-${i + 1}`).trim().toLowerCase();
+              const slug = rawName.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `tab-${i + 1}`;
+              await tab.click();
+              await page.waitForTimeout(250);
+              await page.screenshot({ path: path.join('pr-screenshots', `10-tab-${i + 1}-${slug}.jpg`), type: 'jpeg', quality: 70 });
+            }
 
             let index = 1;
             for (const selector of selectors) {
@@ -80,9 +111,9 @@ jobs:
               if (await locator.count()) {
                 await locator.scrollIntoViewIfNeeded();
                 await locator.screenshot({
-                  path: path.join('pr-screenshots', `component-${index}.jpg`),
+                  path: path.join('pr-screenshots', `20-component-${index}.jpg`),
                   type: 'jpeg',
-                  quality: 50,
+                  quality: 75,
                 });
                 index += 1;
               }
@@ -95,46 +126,76 @@ jobs:
           });
           NODE
 
+      - name: Publish screenshots to gh-pages
+        id: publish
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null; then
+            git fetch origin gh-pages:gh-pages
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . || true
+            git commit --allow-empty -m "Initialize gh-pages"
+            git push origin gh-pages
+            git checkout -
+            git fetch origin gh-pages:gh-pages
+          fi
+
+          git worktree add /tmp/gh-pages gh-pages
+          DEST="/tmp/gh-pages/pr-screenshots/pr-${PR_NUMBER}/${HEAD_SHA}"
+          mkdir -p "${DEST}"
+          cp -f pr-screenshots/*.jpg "${DEST}/"
+          cp -f pr-screenshots/targets.txt "${DEST}/"
+
+          cd /tmp/gh-pages
+          git add "pr-screenshots/pr-${PR_NUMBER}/${HEAD_SHA}"
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit."
+          else
+            git commit -m "PR ${PR_NUMBER} screenshots ${HEAD_SHA}"
+            git push origin gh-pages
+          fi
+
+          echo "base_url=https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/gh-pages/pr-screenshots/pr-${PR_NUMBER}/${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+
       - name: Add PR comment with embedded screenshots
         uses: actions/github-script@v7
+        env:
+          BASE_URL: ${{ steps.publish.outputs.base_url }}
         with:
           script: |
-            const fs = require('node:fs');
-            const path = require('node:path');
-
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issue_number = context.issue.number;
             const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const baseUrl = process.env.BASE_URL;
 
-            const screenshotsDir = 'pr-screenshots';
-            const imageFiles = fs.readdirSync(screenshotsDir)
-              .filter((name) => name.endsWith('.jpg'))
-              .sort((a, b) => a.localeCompare(b));
-
-            const embeds = [];
-            let totalChars = 0;
-            const maxChars = 60000;
-            for (const fileName of imageFiles) {
-              const filePath = path.join(screenshotsDir, fileName);
-              const base64 = fs.readFileSync(filePath, 'base64');
-              const markdown = `### ${fileName}\n![${fileName}](data:image/jpeg;base64,${base64})`;
-              if (totalChars + markdown.length > maxChars) {
-                break;
-              }
-              embeds.push(markdown);
-              totalChars += markdown.length;
-            }
+            const embedded = [
+              '00-creation.jpg',
+              '01-main.jpg',
+              '10-tab-1-quests.jpg',
+              '10-tab-2-map.jpg',
+              '10-tab-3-shop.jpg',
+              '10-tab-4-achievements.jpg',
+              '10-tab-5-character.jpg',
+            ].map((name) => `### ${name}\n![${name}](${baseUrl}/${name})`).join('\n\n');
 
             const body = [
               '<!-- pr-screenshot-comment -->',
-              '📸 Automated UI screenshots generated for this PR.',
+              '📸 Automated UI walkthrough screenshots for this PR.',
               '',
-              'Included images are embedded below (no screenshot files are committed):',
-              ...embeds,
+              'The bot navigates creation + app tabs, then embeds the captured screens below:',
               '',
+              embedded,
+              '',
+              `Component-focused captures and selector list are also available in this folder: ${baseUrl}/`,
               `Workflow run: ${runUrl}`,
-            ].join('\n\n');
+            ].join('\n');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner,
