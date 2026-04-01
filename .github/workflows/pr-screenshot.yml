@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  actions: read
 
 jobs:
   screenshot:
@@ -35,28 +36,58 @@ jobs:
           npx playwright screenshot --device="Desktop Chrome" http://127.0.0.1:4173/index.html pr-screenshot.png
 
       - name: Upload screenshot artifact
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: pr-screenshot
           path: pr-screenshot.png
 
-      - name: Add PR comment with screenshot link
+      - name: Add PR comment with embedded screenshot
         uses: actions/github-script@v7
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const runId = context.runId;
-            const artifactUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`;
+            const issue_number = context.issue.number;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const artifactUrl = process.env.ARTIFACT_URL || runUrl;
+
             const body = [
+              '<!-- pr-screenshot-comment -->',
               '📸 Automated screenshot generated for this PR.',
               '',
-              `Download it from the workflow artifacts on this run: ${artifactUrl}`
+              `![PR screenshot](${artifactUrl})`,
+              '',
+              `If the embedded image does not render, download it from: ${artifactUrl}`,
+              `Workflow run: ${runUrl}`
             ].join('\n');
 
-            await github.rest.issues.createComment({
+            const { data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
-              issue_number: context.issue.number,
-              body,
+              issue_number,
+              per_page: 100,
             });
+
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes('<!-- pr-screenshot-comment -->')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
