@@ -1,0 +1,154 @@
+name: PR Screenshot
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install --no-package-lock --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Capture screenshots relevant to PR changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p pr-screenshots
+          python3 -m http.server 4173 --directory . >/tmp/http.log 2>&1 &
+          SERVER_PID=$!
+          trap "kill ${SERVER_PID}" EXIT
+
+          node <<'NODE'
+          const { execSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const { chromium } = require('playwright');
+
+          const baseSha = process.env.BASE_SHA;
+          const headSha = process.env.HEAD_SHA;
+          const diff = execSync(`git diff --unified=0 ${baseSha} ${headSha} -- index.html`, { encoding: 'utf8' });
+
+          const idRegex = /id="([^"]+)"/g;
+          const classRegex = /class="([^"]+)"/g;
+          const changedSelectors = new Set();
+
+          for (const line of diff.split('\n')) {
+            if (!line.startsWith('+') || line.startsWith('+++')) continue;
+
+            let match;
+            while ((match = idRegex.exec(line)) !== null) changedSelectors.add(`#${match[1]}`);
+            while ((match = classRegex.exec(line)) !== null) {
+              const firstClass = match[1].trim().split(/\s+/)[0];
+              if (firstClass) changedSelectors.add(`.${firstClass}`);
+            }
+          }
+
+          const selectors = [...changedSelectors].slice(0, 3);
+          fs.writeFileSync('pr-screenshots/targets.txt', selectors.join('\n'));
+
+          (async () => {
+            const browser = await chromium.launch();
+            const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
+            await page.goto('http://127.0.0.1:4173/index.html', { waitUntil: 'networkidle' });
+
+            await page.screenshot({ path: 'pr-screenshots/full-page.jpg', type: 'jpeg', quality: 35 });
+
+            let index = 1;
+            for (const selector of selectors) {
+              const locator = page.locator(selector).first();
+              if (await locator.count()) {
+                await locator.scrollIntoViewIfNeeded();
+                await locator.screenshot({
+                  path: path.join('pr-screenshots', `component-${index}.jpg`),
+                  type: 'jpeg',
+                  quality: 50,
+                });
+                index += 1;
+              }
+            }
+
+            await browser.close();
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Add PR comment with embedded screenshots
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const screenshotsDir = 'pr-screenshots';
+            const imageFiles = fs.readdirSync(screenshotsDir)
+              .filter((name) => name.endsWith('.jpg'))
+              .sort((a, b) => a.localeCompare(b));
+
+            const embeds = [];
+            let totalChars = 0;
+            const maxChars = 60000;
+            for (const fileName of imageFiles) {
+              const filePath = path.join(screenshotsDir, fileName);
+              const base64 = fs.readFileSync(filePath, 'base64');
+              const markdown = `### ${fileName}\n![${fileName}](data:image/jpeg;base64,${base64})`;
+              if (totalChars + markdown.length > maxChars) {
+                break;
+              }
+              embeds.push(markdown);
+              totalChars += markdown.length;
+            }
+
+            const body = [
+              '<!-- pr-screenshot-comment -->',
+              '📸 Automated UI screenshots generated for this PR.',
+              '',
+              'Included images are embedded below (no screenshot files are committed):',
+              ...embeds,
+              '',
+              `Workflow run: ${runUrl}`,
+            ].join('\n\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes('<!-- pr-screenshot-comment -->')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
