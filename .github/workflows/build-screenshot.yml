@@ -1,0 +1,59 @@
+name: Build Screenshot
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'builds/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright Chromium
+        run: npx --yes playwright@1.53.0 install --with-deps chromium
+
+      - name: Start local web server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 &
+          echo $! > /tmp/web.pid
+
+      - name: Capture build screenshot
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          SCREENSHOT_URL: http://127.0.0.1:4173/
+          SCREENSHOT_OUTPUT: builds/latest.png
+        run: node scripts/capture-screenshot.mjs
+
+      - name: Stop local web server
+        if: always()
+        run: kill "$(cat /tmp/web.pid)" || true
+
+      - name: Commit screenshot updates
+        run: |
+          if git diff --quiet -- builds; then
+            echo "No screenshot changes detected."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add builds
+          git commit -m "chore(build): update build screenshot [skip ci]"
+          git push
