@@ -4,7 +4,9 @@ import { dirname } from 'node:path';
 
 const targetUrl = process.env.SCREENSHOT_URL || 'http://127.0.0.1:4173/';
 const outputFile = process.env.SCREENSHOT_OUTPUT || 'builds/latest.png';
+const buildPath = process.env.BUILD_PATH || '/builds/latest';
 const commitSha = process.env.COMMIT_SHA || 'unknown';
+const prNumber = process.env.PR_NUMBER || 'n/a';
 const runId = process.env.GITHUB_RUN_ID || 'local';
 const capturedAt = new Date().toISOString();
 
@@ -16,13 +18,13 @@ await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 60_000 });
 await page.screenshot({ path: outputFile, fullPage: true });
 await browser.close();
 
-const indexFile = 'builds/index.html';
+const indexFile = `${dirname(outputFile)}/index.html`;
 const html = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TomatoQuest Build Screenshots</title>
+  <title>TomatoQuest PR Build ${prNumber}</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; }
     img { max-width: 100%; border: 1px solid #ddd; }
@@ -30,12 +32,13 @@ const html = `<!doctype html>
   </style>
 </head>
 <body>
-  <h1>TomatoQuest Build Screenshots</h1>
+  <h1>TomatoQuest PR Build ${prNumber}</h1>
+  <p>Path: <code>${buildPath}</code></p>
   <p>Commit: <code>${commitSha}</code></p>
   <p>Run ID: <code>${runId}</code></p>
   <p>Captured at: <code>${capturedAt}</code></p>
-  <p><a href="latest.png">Open latest screenshot</a></p>
-  <img src="latest.png" alt="Latest build screenshot" />
+  <p><a href="./screenshot.png">Open screenshot</a></p>
+  <img src="./screenshot.png" alt="PR build screenshot" />
 </body>
 </html>`;
 

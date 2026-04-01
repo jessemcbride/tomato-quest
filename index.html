@@ -132,6 +132,7 @@ header{display:flex;align-items:center;justify-content:space-between;border:2px 
 .hbtn{font-family:'Press Start 2P',monospace;font-size:.3rem;background:var(--panel2);border:2px solid var(--border);color:var(--text2);padding:5px 8px;cursor:pointer;transition:border-color .15s,color .15s;position:relative}
 .hbtn:hover{border-color:var(--border2);color:var(--text)}.hbtn.on{border-color:var(--green);color:var(--green)}
 .hbtn .badge{position:absolute;top:-6px;right:-6px;background:var(--tomato);color:white;font-size:.25rem;padding:1px 4px;border-radius:0;min-width:14px;text-align:center}
+.hlink{text-decoration:none;display:inline-flex;align-items:center}
 .hud-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .hud-chip{border:1px solid rgba(90,90,172,.45);background:var(--panel2);padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-height:56px}
 .hud-chip-lbl{font-family:'Press Start 2P',monospace;font-size:.28rem;color:var(--text2)}
@@ -487,6 +488,7 @@ footer{border:2px solid var(--border);background:var(--panel);padding:6px 13px;d
   <header>
     <div class="logo">🍅 Tomato<span>Quest</span></div>
     <div class="hdr-r">
+      <a class="hbtn hlink" href="/builds/" target="_blank" rel="noopener noreferrer">🧪 BETA</a>
       <button class="hbtn" id="featsBtn" onclick="openFeats()">🏆 FEATS <span class="badge" id="featsBadge">0</span></button>
       <button class="hbtn" onclick="openSet()">⚙</button>
       <button class="hbtn" id="musBtn" onclick="toggleMusic()">♪ OFF</button>
